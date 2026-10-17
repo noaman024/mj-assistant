@@ -29,7 +29,8 @@
         android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.MJAssistant"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true">
 
         <!-- Main Cyberpunk Cockpit Activity -->
         <activity

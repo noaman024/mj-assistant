@@ -39,7 +39,8 @@ class ClipboardRequest(BaseModel):
     text: str
 
 class VisionRequest(BaseModel):
-    image_b64: str
+    image_b64: str = None
+    image: str = None
     prompt: str = None
 
 @app.get("/")
@@ -88,10 +89,18 @@ async def get_status():
             "plugged": battery.power_plugged
         }
 
+    cpu_val = psutil.cpu_percent(interval=None)
+    ram_val = psutil.virtual_memory().percent
+    batt_val = batt_info["percent"] if batt_info else 100
+
     return {
+        "status": "online",
+        "cpu": cpu_val,
+        "ram": ram_val,
+        "battery": batt_val,
         "laptop": {
-            "cpu": psutil.cpu_percent(interval=None),
-            "ram": psutil.virtual_memory().percent,
+            "cpu": cpu_val,
+            "ram": ram_val,
             "battery": batt_info,
             "user": USER_NAME
         },
@@ -154,7 +163,10 @@ async def handle_clipboard_sync(req: ClipboardRequest):
 @app.post("/api/vision/analyze")
 async def handle_vision_analysis(req: VisionRequest):
     """Multimodal vision analysis of photo captured by phone camera"""
-    result = await vision_analyzer.analyze_base64(req.image_b64, req.prompt)
+    img_data = req.image_b64 or req.image
+    if not img_data:
+        raise HTTPException(status_code=400, detail="Image data is required")
+    result = await vision_analyzer.analyze_base64(img_data, req.prompt)
     return {
         "status": "success",
         "analysis": result

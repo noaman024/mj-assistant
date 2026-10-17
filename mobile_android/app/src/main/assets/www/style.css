@@ -1,0 +1,675 @@
+:root {
+  --bg: #070a12;
+  --bg-card: rgba(14, 20, 36, 0.88);
+  --border-card: rgba(0, 240, 255, 0.16);
+  --cyan: #00f0ff;
+  --cyan-glow: rgba(0, 240, 255, 0.35);
+  --pink: #ff2a85;
+  --pink-glow: rgba(255, 42, 133, 0.35);
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  background-color: var(--bg);
+  background-image: 
+    radial-gradient(circle at 10% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 90% 85%, rgba(255, 42, 133, 0.08) 0%, transparent 45%);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  padding-bottom: 120px; /* space for bottom dock */
+}
+
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(7, 10, 18, 0.92);
+  border-bottom: 1px solid var(--border-card);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, var(--cyan), var(--pink));
+  color: #000;
+  font-weight: 900;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  letter-spacing: 1px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 5px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 6px var(--yellow);
+  transition: all 0.3s ease;
+}
+
+.status-dot.online {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.status-dot.offline {
+  background: var(--pink);
+  box-shadow: 0 0 8px var(--pink);
+}
+
+.status-dot.standalone {
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.btn-icon {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Telemetry Bar */
+.telemetry-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: rgba(14, 20, 36, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.telemetry-bar::-webkit-scrollbar { display: none; }
+
+.tele-pill {
+  flex: 1;
+  min-width: 75px;
+  background: rgba(18, 26, 46, 0.8);
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tele-pill .label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tele-pill .val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-top: 2px;
+}
+
+/* Tabs Navigation */
+.tabs-nav {
+  display: flex;
+  background: rgba(10, 15, 28, 0.95);
+  border-bottom: 1px solid var(--border-card);
+  padding: 6px 8px;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs-nav::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
+/* Content Area */
+main {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tab-pane {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+.tab-pane.active {
+  display: flex;
+}
+
+/* Glassmorphism Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.badge-accent {
+  font-size: 10px;
+  color: var(--cyan);
+  background: rgba(0, 240, 255, 0.12);
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+}
+
+/* Grid Controls */
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.btn-ctrl {
+  background: rgba(22, 32, 56, 0.7);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  color: var(--text-main);
+  border-radius: 10px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-ctrl:active {
+  transform: scale(0.96);
+  background: rgba(0, 240, 255, 0.2);
+  border-color: var(--cyan);
+}
+
+.btn-ctrl.danger {
+  border-color: rgba(255, 42, 133, 0.3);
+}
+.btn-ctrl.danger:active {
+  background: rgba(255, 42, 133, 0.25);
+  border-color: var(--pink);
+}
+
+.btn-ctrl .icon {
+  font-size: 18px;
+}
+
+/* App Launcher Grid */
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.app-tile {
+  background: rgba(20, 28, 50, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-main);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-tile:active {
+  transform: scale(0.94);
+  border-color: var(--cyan);
+  background: rgba(0, 240, 255, 0.18);
+}
+
+.app-tile .icon {
+  font-size: 22px;
+}
+
+/* Screen Mirror */
+.screen-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.screen-overlay-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* Camera Box */
+.camera-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.camera-box video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vision-result {
+  margin-top: 10px;
+  background: rgba(10, 15, 28, 0.8);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--cyan);
+  line-height: 1.5;
+}
+
+.btn-icon-small {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-main);
+  border-radius: 12px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* Inputs & Form Controls */
+.styled-input {
+  width: 100%;
+  background: rgba(10, 15, 28, 0.8);
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+}
+.styled-input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.clip-textarea {
+  width: 100%;
+  min-height: 70px;
+  background: rgba(10, 15, 28, 0.8);
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  padding: 10px;
+  color: var(--text-main);
+  font-size: 12px;
+  outline: none;
+  resize: vertical;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--cyan), #0099ff);
+  color: #000;
+  border: none;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 14px var(--cyan-glow);
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* Voicemail List */
+.voicemail-item {
+  background: rgba(18, 26, 46, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.voicemail-item .vm-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.voicemail-item .vm-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Bottom Floating Chat Dock */
+.bottom-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(7, 10, 18, 0.94);
+  border-top: 1px solid var(--border-card);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.response-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 24, 42, 0.9);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.4;
+  max-height: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avatar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 6px var(--pink);
+  flex-shrink: 0;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-input {
+  flex: 1;
+  background: rgba(18, 26, 46, 0.9);
+  border: 1px solid var(--border-card);
+  border-radius: 20px;
+  padding: 10px 16px;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+}
+.chat-input:focus {
+  border-color: var(--cyan);
+}
+
+.btn-mic {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(22, 32, 56, 0.9);
+  border: 1px solid var(--border-card);
+  color: var(--text-main);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.btn-mic.listening {
+  background: var(--pink);
+  box-shadow: 0 0 16px var(--pink);
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.12); }
+}
+
+.btn-send {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), #0099ff);
+  border: none;
+  color: #000;
+  font-size: 16px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.btn-send:active {
+  transform: scale(0.95);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 360px;
+  padding: 18px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.modal-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.input-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.modal-status-box {
+  margin-top: 12px;
+  background: rgba(10, 15, 28, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--cyan);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.modal-actions button {
+  flex: 1;
+}
+
+/* Siren Overlay */
+.siren-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: #ff0055;
+  color: #fff;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
+  animation: sirenFlash 0.5s infinite alternate;
+}
+@keyframes sirenFlash {
+  0% { background: #ff0055; }
+  100% { background: #000000; }
+}

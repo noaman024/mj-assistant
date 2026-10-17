@@ -44,4 +44,23 @@ class DirectCallManager(private val context: Context) {
             false
         }
     }
+
+    fun sendWhatsApp(phoneNumber: String, message: String): Boolean {
+        return try {
+            val cleanNumber = phoneNumber.replace(Regex("[^0-9+]"), "").removePrefix("+")
+            MJAccessibilityService.pendingMessageText = message
+            MJAccessibilityService.shouldAutoSend = true
+            val encodedMsg = java.net.URLEncoder.encode(message, "UTF-8")
+            val uri = Uri.parse("https://api.whatsapp.com/send?phone=$cleanNumber&text=$encodedMsg")
+            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                setPackage("com.whatsapp")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "WhatsApp dispatch error: ${e.message}")
+            false
+        }
+    }
 }

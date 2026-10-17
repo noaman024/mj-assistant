@@ -1,183 +1,63 @@
-// MJ Mobile Controller PWA App Logic
+// MJ Assistant Holographic Cockpit - High-Performance Controller
+// Connects Web UI to Laptop Bridge Server (Wi-Fi) and Native AndroidBridge
 
-let ws = null;
-let audioCtx = null;
-let sirenOsc = null;
-let sirenInterval = null;
-let isSirenActive = false;
+let activeHost = "10.35.126.235:8000";
+let isLaptopOnline = false;
 let screenStreamInterval = null;
+let currentTab = "tab-remote";
 let cameraStream = null;
+let isTorchActive = false;
 
-// Initialize
+// 1. Initialization
 document.addEventListener("DOMContentLoaded", () => {
+  // Load saved IP
+  if (window.AndroidBridge && typeof window.AndroidBridge.getLaptopIp === "function") {
+    activeHost = window.AndroidBridge.getLaptopIp();
+  } else {
+    activeHost = localStorage.getItem("laptop_ip") || "10.35.126.235:8000";
+  }
+  document.getElementById("laptopIpInput").value = activeHost;
+
   setupTabs();
-  initWebSocket();
-  initBatteryMonitoring();
-  setupRemoteControls();
+  setupControls();
+  setupSettingsModal();
+  setupScreenMirror();
   setupCamera();
-  setupSpeechRecognition();
-  setupClipboard();
+  setupVoice();
+  setupCallsAndWhatsApp();
+
+  // Initial connection ping
+  checkConnection();
+
+  // Poll connection & telemetry every 3 seconds
+  setInterval(checkConnection, 3000);
 });
 
-// 1. WebSocket Bridge
-function initWebSocket() {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-  ws = new WebSocket(wsUrl);
-
-  ws.onopen = () => {
-    document.getElementById("statusDot").classList.add("online");
-    document.getElementById("statusText").innerText = "Online";
-    console.log("[WS] Connected to MJ Hub");
-    sendBatteryTelemetry();
-  };
-
-  ws.onclose = () => {
-    document.getElementById("statusDot").classList.remove("online");
-    document.getElementById("statusText").innerText = "Offline";
-    console.log("[WS] Disconnected, reconnecting in 3s...");
-    setTimeout(initWebSocket, 3000);
-  };
-
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      handleServerEvent(data);
-    } catch (e) {
-      console.error("[WS] Parse error:", e);
-    }
-  };
-}
-
-function handleServerEvent(data) {
-  console.log("[WS Event]", data);
-
-  if (data.type === "ring_alert") {
-    if (data.action === "start_siren") {
-      startPhoneSiren();
-    } else if (data.action === "stop_siren") {
-      stopPhoneSiren();
-    }
-  } else if (data.type === "clipboard_sync") {
-    const clipInput = document.getElementById("clipboardInput");
-    if (clipInput) clipInput.value = data.text;
-    showAssistantResponse("📋 Laptop clipboard updated");
-  } else if (data.type === "new_voicemail") {
-    showAssistantResponse(`📞 New Voicemail from ${data.voicemail.caller_name}: "${data.voicemail.summary}"`);
-    loadVoicemails();
-  } else if (data.type === "dial_call") {
-    showAssistantResponse(`📞 Calling ${data.name || data.number}...`);
-    window.location.href = `tel:${data.number}`;
-  } else if (data.type === "telemetry_update") {
-    updateLaptopTelemetry(data);
-  }
-}
-
-// 2. Loud Siren / Find My Phone Alarm (Web Audio API)
-function startPhoneSiren() {
-  if (isSirenActive) return;
-  isSirenActive = true;
-  document.getElementById("sirenOverlay").style.display = "flex";
-
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AudioContext();
-    
-    let high = false;
-    sirenInterval = setInterval(() => {
-      if (!isSirenActive || !audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(high ? 1760 : 880, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
-      
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.35);
-      high = !high;
-    }, 400);
-
-    // Vibrate device if supported
-    if ("vibrate" in navigator) {
-      navigator.vibrate([400, 200, 400, 200, 400]);
-    }
-  } catch (e) {
-    console.warn("AudioContext error:", e);
-  }
-}
-
-function stopPhoneSiren() {
-  isSirenActive = false;
-  document.getElementById("sirenOverlay").style.display = "none";
-  if (sirenInterval) clearInterval(sirenInterval);
-  if (audioCtx) {
-    try { audioCtx.close(); } catch (e) {}
-    audioCtx = null;
-  }
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: "ring_stopped" }));
-  }
-}
-
-document.getElementById("stopSirenBtn").addEventListener("click", stopPhoneSiren);
-
-// 3. Battery Telemetry (Web Battery API)
-async function initBatteryMonitoring() {
-  if ("getBattery" in navigator) {
-    try {
-      const battery = await navigator.getBattery();
-      const update = () => {
-        sendBatteryTelemetry(Math.round(battery.level * 100), battery.charging);
-      };
-      update();
-      battery.addEventListener("levelchange", update);
-      battery.addEventListener("chargingchange", update);
-    } catch (e) {
-      console.log("Battery API not permitted:", e);
-    }
-  }
-}
-
-function sendBatteryTelemetry(level, isCharging) {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      type: "phone_status",
-      battery: level || null,
-      charging: !!isCharging,
-      device: navigator.userAgent.includes("Android") ? "Android Phone" : "Mobile Phone"
-    }));
-  }
-}
-
-// 4. Tab Navigation
+// 2. Tab Navigation
 function setupTabs() {
-  const tabBtns = document.querySelectorAll(".tab-btn");
-  const tabPanes = document.querySelectorAll(".tab-pane");
+  const tabs = document.querySelectorAll(".tab-btn");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
 
-  tabBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      tabBtns.forEach(b => b.classList.remove("active"));
-      tabPanes.forEach(p => p.classList.remove("active"));
+      const targetId = tab.getAttribute("data-tab");
+      currentTab = targetId;
+      document.querySelectorAll(".tab-pane").forEach((pane) => {
+        pane.classList.remove("active");
+      });
+      const targetPane = document.getElementById(targetId);
+      if (targetPane) targetPane.classList.add("active");
 
-      btn.classList.add("active");
-      const target = document.getElementById(btn.dataset.tab);
-      if (target) target.classList.add("active");
-
-      // Handle screen stream polling toggle
-      if (btn.dataset.tab === "tab-screen") {
+      // Manage camera & screen streaming based on active tab
+      if (targetId === "tab-screen") {
         startScreenStream();
       } else {
         stopScreenStream();
       }
 
-      // Handle camera preview toggle
-      if (btn.dataset.tab === "tab-camera") {
-        startCameraStream();
+      if (targetId === "tab-camera") {
+        initCameraStream();
       } else {
         stopCameraStream();
       }
@@ -185,72 +65,272 @@ function setupTabs() {
   });
 }
 
-// 5. Remote Controls & Commands
-function setupRemoteControls() {
-  // Volume controls
-  document.querySelectorAll("[data-action]").forEach(el => {
-    el.addEventListener("click", () => {
-      const action = el.dataset.action;
-      executeCommand(action);
+// 3. Connection & Telemetry
+async function checkConnection() {
+  const statusDot = document.getElementById("statusDot");
+  const statusText = document.getElementById("statusText");
+
+  // Read native phone battery if available
+  if (window.AndroidBridge && typeof window.AndroidBridge.getBatteryLevel === "function") {
+    try {
+      const pBatt = window.AndroidBridge.getBatteryLevel();
+      if (pBatt > 0) {
+        document.getElementById("valPhoneBatt").innerText = `${pBatt}%`;
+      }
+    } catch (_) {}
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
+
+    const res = await fetch(`http://${activeHost}/api/status`, {
+      signal: controller.signal
     });
-  });
+    clearTimeout(timeoutId);
 
-  // App Launchers
-  document.querySelectorAll("[data-app]").forEach(el => {
-    el.addEventListener("click", () => {
-      const app = el.dataset.app;
-      executeCommand(`open ${app}`);
-    });
-  });
+    if (res.ok) {
+      const data = await res.json();
+      isLaptopOnline = true;
+      statusDot.className = "status-dot online";
+      statusText.innerText = "Online";
 
-  // Chat input
-  const chatInput = document.getElementById("chatInput");
-  const sendBtn = document.getElementById("sendBtn");
+      // Update telemetry
+      if (data.cpu !== undefined) document.getElementById("valCpu").innerText = `${data.cpu}%`;
+      if (data.ram !== undefined) document.getElementById("valRam").innerText = `${data.ram}%`;
+      if (data.battery !== undefined) document.getElementById("valBatt").innerText = `${data.battery}%`;
+      return true;
+    }
+  } catch (e) {
+    // Laptop offline or unreachable
+  }
 
-  const send = () => {
-    const text = chatInput.value.trim();
-    if (!text) return;
-    executeCommand(text);
-    chatInput.value = "";
-  };
-
-  sendBtn.addEventListener("click", send);
-  chatInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") send();
-  });
+  isLaptopOnline = false;
+  statusDot.className = "status-dot standalone";
+  statusText.innerText = "Phone Mode";
+  document.getElementById("valCpu").innerText = "--%";
+  document.getElementById("valRam").innerText = "--%";
+  document.getElementById("valBatt").innerText = "--%";
+  return false;
 }
 
-async function executeCommand(query) {
-  showAssistantResponse(`⏳ Executing: "${query}"...`);
-  try {
-    const res = await fetch("/api/command", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: query, source: "phone" })
-    });
-    const data = await res.json();
-    showAssistantResponse(data.response || "Command executed.");
-  } catch (e) {
-    showAssistantResponse(`⚠️ Error: ${e.message}`);
+// 4. Command Dispatching
+async function dispatchCommand(query) {
+  if (!query || !query.trim()) return;
+  const cleanCmd = query.trim();
+
+  showAssistantResponse(`Soch rahi hu...`);
+
+  // Haptic feedback
+  if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === "function") {
+    window.AndroidBridge.vibrate(30);
+  }
+
+  if (isLaptopOnline) {
+    try {
+      const res = await fetch(`http://${activeHost}/api/command`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: cleanCmd, source: "phone_cockpit" })
+      });
+      const data = await res.json();
+      const reply = data.response || "Command executed on Laptop.";
+      showAssistantResponse(reply);
+      return;
+    } catch (e) {
+      console.warn("Laptop command failed, falling back to local bridge:", e);
+    }
+  }
+
+  // Standalone Phone Mode fallback
+  if (window.AndroidBridge && typeof window.AndroidBridge.dispatchLocalCommand === "function") {
+    const localReply = window.AndroidBridge.dispatchLocalCommand(cleanCmd);
+    showAssistantResponse(localReply);
+  } else {
+    showAssistantResponse(`Laptop offline hai Noaman. Main phone standalone mode me hu.`);
   }
 }
 
 function showAssistantResponse(text) {
-  const el = document.getElementById("responseBar");
-  if (el) el.innerText = text;
+  const el = document.getElementById("responseText");
+  if (el) {
+    el.innerText = text;
+  }
 }
 
-// 6. Live Screen Stream
-function startScreenStream() {
-  const img = document.getElementById("screenImage");
-  if (!img) return;
-  stopScreenStream();
+// 5. Controls Setup
+function setupControls() {
+  // Remote Buttons
+  document.querySelectorAll(".btn-ctrl[data-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.getAttribute("data-action");
+      dispatchCommand(action);
+    });
+  });
 
-  const update = () => {
-    img.src = `/api/screen/snapshot?t=${Date.now()}`;
+  // App Launcher Tiles
+  document.querySelectorAll(".app-tile[data-app]").forEach((tile) => {
+    tile.addEventListener("click", () => {
+      const app = tile.getAttribute("data-app");
+      dispatchCommand(`open ${app}`);
+    });
+  });
+
+  // Chat Send button
+  const chatInput = document.getElementById("chatInput");
+  const sendBtn = document.getElementById("sendBtn");
+
+  const submitChat = () => {
+    const text = chatInput.value.trim();
+    if (text) {
+      dispatchCommand(text);
+      chatInput.value = "";
+    }
   };
-  update();
-  screenStreamInterval = setInterval(update, 1200);
+
+  sendBtn.addEventListener("click", submitChat);
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitChat();
+  });
+
+  // Clipboard sync
+  const sendClipBtn = document.getElementById("sendClipBtn");
+  if (sendClipBtn) {
+    sendClipBtn.addEventListener("click", async () => {
+      const text = document.getElementById("clipboardInput").value;
+      if (!text) return;
+      if (isLaptopOnline) {
+        try {
+          await fetch(`http://${activeHost}/api/clipboard`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text })
+          });
+          showAssistantResponse("📋 Laptop clipboard updated!");
+        } catch (_) {
+          showAssistantResponse("Clipboard sync me error aaya.");
+        }
+      } else {
+        showAssistantResponse("Laptop offline hai Noaman.");
+      }
+    });
+  }
+
+  // Siren Test
+  const btnFindMyPhone = document.getElementById("btnFindMyPhone");
+  if (btnFindMyPhone) {
+    btnFindMyPhone.addEventListener("click", () => {
+      document.getElementById("sirenOverlay").style.display = "flex";
+      if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === "function") {
+        window.AndroidBridge.vibrate(1000);
+      }
+    });
+  }
+
+  const stopSirenBtn = document.getElementById("stopSirenBtn");
+  if (stopSirenBtn) {
+    stopSirenBtn.addEventListener("click", () => {
+      document.getElementById("sirenOverlay").style.display = "none";
+    });
+  }
+
+  // Flashlight button
+  const btnToggleTorch = document.getElementById("btnToggleTorch");
+  if (btnToggleTorch) {
+    btnToggleTorch.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.toggleTorch === "function") {
+        isTorchActive = !isTorchActive;
+        window.AndroidBridge.toggleTorch(isTorchActive);
+        btnToggleTorch.innerText = isTorchActive ? "🔦 Off" : "🔦 Torch";
+        showAssistantResponse(isTorchActive ? "Flashlight on kar di." : "Flashlight off kar di.");
+      }
+    });
+  }
+}
+
+// 6. Native Calls & WhatsApp
+function setupCallsAndWhatsApp() {
+  const btnDirectCall = document.getElementById("btnDirectCall");
+  const phoneCallInput = document.getElementById("phoneCallInput");
+
+  btnDirectCall.addEventListener("click", () => {
+    const phone = phoneCallInput.value.trim();
+    if (!phone) {
+      showAssistantResponse("Kripya ek valid phone number enter karein Noaman.");
+      return;
+    }
+
+    if (window.AndroidBridge && typeof window.AndroidBridge.makeCall === "function") {
+      showAssistantResponse(`Direct call connect ho rahi hai: ${phone}...`);
+      window.AndroidBridge.makeCall(phone);
+    } else {
+      window.location.href = `tel:${phone}`;
+    }
+  });
+
+  const btnSendWhatsApp = document.getElementById("btnSendWhatsApp");
+  const whatsappNumberInput = document.getElementById("whatsappNumberInput");
+  const whatsappMessageInput = document.getElementById("whatsappMessageInput");
+
+  btnSendWhatsApp.addEventListener("click", () => {
+    const phone = whatsappNumberInput.value.trim();
+    const msg = whatsappMessageInput.value.trim();
+
+    if (!phone || !msg) {
+      showAssistantResponse("Phone number aur message dono zaroori hain Noaman.");
+      return;
+    }
+
+    if (window.AndroidBridge && typeof window.AndroidBridge.sendWhatsApp === "function") {
+      showAssistantResponse(`WhatsApp auto-send dispatch ho raha hai...`);
+      window.AndroidBridge.sendWhatsApp(phone, msg);
+    } else {
+      window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`);
+    }
+  });
+}
+
+// 7. Screen Mirroring
+function setupScreenMirror() {
+  const screenImg = document.getElementById("screenImage");
+  const btnRefresh = document.getElementById("btnRefreshScreen");
+  const btnSnap = document.getElementById("btnSnapScreen");
+  const btnToggle = document.getElementById("btnToggleScreenStream");
+
+  const refreshScreen = () => {
+    if (!isLaptopOnline) {
+      screenImg.alt = "Laptop offline. Connect on same Wi-Fi to mirror screen.";
+      return;
+    }
+    screenImg.src = `http://${activeHost}/api/screen/snapshot?t=${Date.now()}`;
+  };
+
+  btnRefresh.addEventListener("click", refreshScreen);
+  btnSnap.addEventListener("click", () => {
+    dispatchCommand("screenshot");
+    setTimeout(refreshScreen, 1000);
+  });
+
+  let streaming = true;
+  btnToggle.addEventListener("click", () => {
+    streaming = !streaming;
+    btnToggle.innerText = streaming ? "⏸️ Pause Stream" : "▶️ Resume Stream";
+    if (streaming) startScreenStream();
+    else stopScreenStream();
+  });
+}
+
+function startScreenStream() {
+  stopScreenStream();
+  if (isLaptopOnline) {
+    const screenImg = document.getElementById("screenImage");
+    screenImg.src = `http://${activeHost}/api/screen/snapshot?t=${Date.now()}`;
+    screenStreamInterval = setInterval(() => {
+      if (currentTab === "tab-screen" && isLaptopOnline) {
+        screenImg.src = `http://${activeHost}/api/screen/snapshot?t=${Date.now()}`;
+      }
+    }, 1400);
+  }
 }
 
 function stopScreenStream() {
@@ -260,218 +340,155 @@ function stopScreenStream() {
   }
 }
 
-// 7. AI Camera Eye
-async function startCameraStream() {
-  const video = document.getElementById("cameraVideo");
-  if (!video || cameraStream) return;
+// 8. Phone Camera AI Eye
+function setupCamera() {
+  const analyzeBtn = document.getElementById("analyzeCameraBtn");
+  analyzeBtn.addEventListener("click", () => {
+    const video = document.getElementById("cameraVideo");
+    const canvas = document.getElementById("cameraCanvas");
+    const resultBox = document.getElementById("visionResult");
 
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false
-    });
-    video.srcObject = cameraStream;
-  } catch (e) {
-    console.error("Camera access error:", e);
-    document.getElementById("visionResult").innerText = "Camera access denied or unavailable: " + e.message;
+    if (!video.videoWidth) {
+      resultBox.innerText = "Camera feed abhi ready nahi hai.";
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    resultBox.innerText = "🔍 Image analyze ho rahi hai...";
+    showAssistantResponse("Image dekh rahi hu Noaman...");
+
+    // Send frame to server if online
+    if (isLaptopOnline) {
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      fetch(`http://${activeHost}/api/vision/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const text = data.analysis || "Analysis complete.";
+        resultBox.innerText = text;
+        showAssistantResponse(text);
+      })
+      .catch(() => {
+        resultBox.innerText = "Camera frame capture ho gaya hai. Local recognition active hai.";
+      });
+    } else {
+      setTimeout(() => {
+        resultBox.innerText = "Image captured! Standalone mode me basic visual sensing ready hai.";
+      }, 800);
+    }
+  });
+}
+
+function initCameraStream() {
+  const video = document.getElementById("cameraVideo");
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then((stream) => {
+        cameraStream = stream;
+        video.srcObject = stream;
+      })
+      .catch((err) => {
+        console.warn("Camera access warning:", err);
+      });
   }
 }
 
 function stopCameraStream() {
   if (cameraStream) {
-    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream.getTracks().forEach((track) => track.stop());
     cameraStream = null;
   }
 }
 
-function setupCamera() {
-  const analyzeBtn = document.getElementById("analyzeCameraBtn");
-  if (!analyzeBtn) return;
-
-  analyzeBtn.addEventListener("click", async () => {
-    const video = document.getElementById("cameraVideo");
-    const resultEl = document.getElementById("visionResult");
-    if (!video || !cameraStream) {
-      resultEl.innerText = "Camera active nahi hai.";
-      return;
-    }
-
-    resultEl.innerText = "🔍 MJ analyzing what's in front of your camera...";
-
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const b64 = canvas.toDataURL("image/jpeg", 0.7);
-
-    try {
-      const res = await fetch("/api/vision/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_b64: b64, prompt: "Is photo me kya dikh raha hai? Hindi/Hinglish me short me batao." })
-      });
-      const data = await res.json();
-      resultEl.innerText = data.analysis || "No response received.";
-    } catch (e) {
-      resultEl.innerText = "Vision analysis error: " + e.message;
-    }
-  });
-}
-
-// 8. Speech Recognition (Push-to-Talk)
-function setupSpeechRecognition() {
+// 9. Voice & Speech Hooks
+function setupVoice() {
   const micBtn = document.getElementById("micBtn");
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    micBtn.title = "Speech recognition not supported on this browser";
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = "hi-IN";
-  recognition.continuous = false;
-  recognition.interimResults = false;
-
-  recognition.onstart = () => {
-    micBtn.classList.add("recording");
-    showAssistantResponse("🎙️ Listening... Boliye");
-  };
-
-  recognition.onend = () => {
-    micBtn.classList.remove("recording");
-  };
-
-  recognition.onresult = (event) => {
-    const spoken = event.results[0][0].transcript;
-    document.getElementById("chatInput").value = spoken;
-    executeCommand(spoken);
-  };
-
-  recognition.onerror = (e) => {
-    micBtn.classList.remove("recording");
-    showAssistantResponse("Mic error: " + e.error);
-  };
-
   micBtn.addEventListener("click", () => {
-    try {
-      recognition.start();
-    } catch (e) {
-      recognition.stop();
+    if (window.AndroidBridge && typeof window.AndroidBridge.startVoiceRecognition === "function") {
+      window.AndroidBridge.startVoiceRecognition();
+    } else {
+      showAssistantResponse("Native voice recognition available inside the Android APK.");
     }
   });
-}
 
-// 9. Clipboard Sync
-function setupClipboard() {
-  const sendClipBtn = document.getElementById("sendClipBtn");
-  const clipInput = document.getElementById("clipboardInput");
-
-  if (!sendClipBtn || !clipInput) return;
-
-  sendClipBtn.addEventListener("click", async () => {
-    const text = clipInput.value.trim();
-    if (!text) return;
-    try {
-      const res = await fetch("/api/clipboard", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text })
-      });
-      const data = await res.json();
-      showAssistantResponse(data.message || "Clipboard sent to laptop");
-    } catch (e) {
-      showAssistantResponse("Clipboard error: " + e.message);
+  // Global callbacks called by MainActivity.kt
+  window.onSpeechStatus = function(status) {
+    const mic = document.getElementById("micBtn");
+    if (status === "listening") {
+      mic.classList.add("listening");
+      showAssistantResponse("🎙️ Sun rahi hu Noaman... Boliye");
+    } else {
+      mic.classList.remove("listening");
     }
-  });
-}
+  };
 
-// 10. Telemetry updates
-async function fetchTelemetry() {
-  try {
-    const res = await fetch("/api/status");
-    const data = await res.json();
-    if (data.laptop) {
-      const elCpu = document.getElementById("valCpu");
-      const elRam = document.getElementById("valRam");
-      const elBatt = document.getElementById("valBatt");
-      if (elCpu) elCpu.innerText = data.laptop.cpu + "%";
-      if (elRam) elRam.innerText = data.laptop.ram + "%";
-      if (elBatt) elBatt.innerText = data.laptop.battery ? (data.laptop.battery.percent + "%") : "N/A";
+  window.onNativeVoiceResult = function(spokenText) {
+    const mic = document.getElementById("micBtn");
+    mic.classList.remove("listening");
+    if (spokenText) {
+      document.getElementById("chatInput").value = spokenText;
+      dispatchCommand(spokenText);
     }
-  } catch (e) {}
+  };
 }
 
-setInterval(fetchTelemetry, 3000);
-fetchTelemetry();
+// 10. Settings Modal
+function setupSettingsModal() {
+  const modal = document.getElementById("settingsModal");
+  const btnSettings = document.getElementById("btnSettings");
+  const statusBadge = document.getElementById("statusBadge");
+  const btnClose = document.getElementById("btnCloseModal");
+  const btnSave = document.getElementById("btnSaveIp");
+  const btnPing = document.getElementById("btnTestPing");
+  const ipInput = document.getElementById("laptopIpInput");
+  const statusBox = document.getElementById("modalStatusBox");
 
-// 11. Voicemail Management
-async function loadVoicemails() {
-  const listEl = document.getElementById("voicemailsList");
-  if (!listEl) return;
-  try {
-    const res = await fetch("/api/call/voicemails");
-    const data = await res.json();
-    const vms = data.voicemails || [];
-    if (vms.length === 0) {
-      listEl.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">Koi nayi voicemail nahi hai. All clear!</p>';
-      return;
-    }
-    listEl.innerHTML = vms.map(vm => {
-      const urgentColor = vm.urgency === "URGENT" ? "var(--pink)" : "var(--cyan)";
-      return `
-        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="font-size:14px; color:#fff;">👤 ${vm.caller_name}</strong>
-            <span style="font-size:10px; font-weight:700; color:${urgentColor}; border:1px solid ${urgentColor}; padding:2px 6px; border-radius:6px;">${vm.urgency}</span>
-          </div>
-          <span style="font-size:11px; color:var(--text-muted);">${vm.timestamp} | ${vm.phone_number}</span>
-          <p style="font-size:13px; color:var(--text-main); margin-top:2px;">"${vm.summary}"</p>
-          <p style="font-size:11px; color:var(--text-muted); font-style:italic;">Transcript: "${vm.transcript}"</p>
-          ${vm.audio_url ? `<audio controls src="${vm.audio_url}" style="width:100%; height:32px; margin-top:6px;"></audio>` : ''}
-        </div>
-      `;
-    }).join("");
-  } catch (e) {
-    listEl.innerHTML = `<p style="font-size:12px; color:var(--pink);">Error loading: ${e.message}</p>`;
-  }
-}
+  const openModal = () => {
+    ipInput.value = activeHost;
+    statusBox.innerText = `Current target: ${activeHost} (${isLaptopOnline ? "Online" : "Offline"})`;
+    modal.classList.add("active");
+  };
 
-// Voicemail simulation & clear buttons
-document.addEventListener("DOMContentLoaded", () => {
-  loadVoicemails();
+  btnSettings.addEventListener("click", openModal);
+  statusBadge.addEventListener("click", openModal);
+  btnClose.addEventListener("click", () => modal.classList.remove("active"));
 
-  const simBtn = document.getElementById("btnSimulateCall");
-  if (simBtn) {
-    simBtn.addEventListener("click", async () => {
-      showAssistantResponse("⏳ Simulating incoming call & voicemail...");
-      try {
-        const res = await fetch("/api/call/voicemail", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            caller_name: "Rahul",
-            phone_number: "+919876543210",
-            transcript: "Bhai jaldi college aja, practical exam shuru hone wali hai!"
-          })
-        });
-        const data = await res.json();
-        showAssistantResponse(`✅ Voicemail processed from ${data.voicemail.caller_name}`);
-        loadVoicemails();
-      } catch (e) {
-        showAssistantResponse("Error: " + e.message);
+  btnSave.addEventListener("click", () => {
+    const val = ipInput.value.trim();
+    if (val) {
+      activeHost = val;
+      localStorage.setItem("laptop_ip", val);
+      if (window.AndroidBridge && typeof window.AndroidBridge.setLaptopIp === "function") {
+        window.AndroidBridge.setLaptopIp(val);
       }
-    });
-  }
+      statusBox.innerText = `Saved! Testing connection to ${val}...`;
+      checkConnection().then((online) => {
+        statusBox.innerText = online ? `🟢 Connected to ${val} successfully!` : `⚠️ Could not reach ${val}. Check Wi-Fi & laptop server.`;
+      });
+    }
+  });
 
-  const clearBtn = document.getElementById("btnClearVmBtn");
-  if (clearBtn) {
-    clearBtn.addEventListener("click", async () => {
-      await fetch("/api/call/voicemails/read", { method: "POST" });
-      loadVoicemails();
-      showAssistantResponse("Voicemails marked as read.");
-    });
-  }
-});
+  btnPing.addEventListener("click", async () => {
+    const val = ipInput.value.trim() || activeHost;
+    statusBox.innerText = `Pinging ${val}...`;
+    const start = Date.now();
+    try {
+      const res = await fetch(`http://${val}/api/status`);
+      const latency = Date.now() - start;
+      if (res.ok) {
+        statusBox.innerText = `🟢 Ping 200 OK (${latency}ms). Connected!`;
+      } else {
+        statusBox.innerText = `⚠️ HTTP ${res.status} returned from ${val}.`;
+      }
+    } catch (e) {
+      statusBox.innerText = `❌ Unreachable (${Date.now() - start}ms). Ensure Laptop server is running on port 8000.`;
+    }
+  });
+}

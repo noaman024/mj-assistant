@@ -1,0 +1,494 @@
+// MJ Assistant Holographic Cockpit - High-Performance Controller
+// Connects Web UI to Laptop Bridge Server (Wi-Fi) and Native AndroidBridge
+
+let activeHost = "10.35.126.235:8000";
+let isLaptopOnline = false;
+let screenStreamInterval = null;
+let currentTab = "tab-remote";
+let cameraStream = null;
+let isTorchActive = false;
+
+// 1. Initialization
+document.addEventListener("DOMContentLoaded", () => {
+  // Load saved IP
+  if (window.AndroidBridge && typeof window.AndroidBridge.getLaptopIp === "function") {
+    activeHost = window.AndroidBridge.getLaptopIp();
+  } else {
+    activeHost = localStorage.getItem("laptop_ip") || "10.35.126.235:8000";
+  }
+  document.getElementById("laptopIpInput").value = activeHost;
+
+  setupTabs();
+  setupControls();
+  setupSettingsModal();
+  setupScreenMirror();
+  setupCamera();
+  setupVoice();
+  setupCallsAndWhatsApp();
+
+  // Initial connection ping
+  checkConnection();
+
+  // Poll connection & telemetry every 3 seconds
+  setInterval(checkConnection, 3000);
+});
+
+// 2. Tab Navigation
+function setupTabs() {
+  const tabs = document.querySelectorAll(".tab-btn");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      const targetId = tab.getAttribute("data-tab");
+      currentTab = targetId;
+      document.querySelectorAll(".tab-pane").forEach((pane) => {
+        pane.classList.remove("active");
+      });
+      const targetPane = document.getElementById(targetId);
+      if (targetPane) targetPane.classList.add("active");
+
+      // Manage camera & screen streaming based on active tab
+      if (targetId === "tab-screen") {
+        startScreenStream();
+      } else {
+        stopScreenStream();
+      }
+
+      if (targetId === "tab-camera") {
+        initCameraStream();
+      } else {
+        stopCameraStream();
+      }
+    });
+  });
+}
+
+// 3. Connection & Telemetry
+async function checkConnection() {
+  const statusDot = document.getElementById("statusDot");
+  const statusText = document.getElementById("statusText");
+
+  // Read native phone battery if available
+  if (window.AndroidBridge && typeof window.AndroidBridge.getBatteryLevel === "function") {
+    try {
+      const pBatt = window.AndroidBridge.getBatteryLevel();
+      if (pBatt > 0) {
+        document.getElementById("valPhoneBatt").innerText = `${pBatt}%`;
+      }
+    } catch (_) {}
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
+
+    const res = await fetch(`http://${activeHost}/api/status`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      isLaptopOnline = true;
+      statusDot.className = "status-dot online";
+      statusText.innerText = "Online";
+
+      // Update telemetry
+      if (data.cpu !== undefined) document.getElementById("valCpu").innerText = `${data.cpu}%`;
+      if (data.ram !== undefined) document.getElementById("valRam").innerText = `${data.ram}%`;
+      if (data.battery !== undefined) document.getElementById("valBatt").innerText = `${data.battery}%`;
+      return true;
+    }
+  } catch (e) {
+    // Laptop offline or unreachable
+  }
+
+  isLaptopOnline = false;
+  statusDot.className = "status-dot standalone";
+  statusText.innerText = "Phone Mode";
+  document.getElementById("valCpu").innerText = "--%";
+  document.getElementById("valRam").innerText = "--%";
+  document.getElementById("valBatt").innerText = "--%";
+  return false;
+}
+
+// 4. Command Dispatching
+async function dispatchCommand(query) {
+  if (!query || !query.trim()) return;
+  const cleanCmd = query.trim();
+
+  showAssistantResponse(`Soch rahi hu...`);
+
+  // Haptic feedback
+  if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === "function") {
+    window.AndroidBridge.vibrate(30);
+  }
+
+  if (isLaptopOnline) {
+    try {
+      const res = await fetch(`http://${activeHost}/api/command`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: cleanCmd, source: "phone_cockpit" })
+      });
+      const data = await res.json();
+      const reply = data.response || "Command executed on Laptop.";
+      showAssistantResponse(reply);
+      return;
+    } catch (e) {
+      console.warn("Laptop command failed, falling back to local bridge:", e);
+    }
+  }
+
+  // Standalone Phone Mode fallback
+  if (window.AndroidBridge && typeof window.AndroidBridge.dispatchLocalCommand === "function") {
+    const localReply = window.AndroidBridge.dispatchLocalCommand(cleanCmd);
+    showAssistantResponse(localReply);
+  } else {
+    showAssistantResponse(`Laptop offline hai Noaman. Main phone standalone mode me hu.`);
+  }
+}
+
+function showAssistantResponse(text) {
+  const el = document.getElementById("responseText");
+  if (el) {
+    el.innerText = text;
+  }
+}
+
+// 5. Controls Setup
+function setupControls() {
+  // Remote Buttons
+  document.querySelectorAll(".btn-ctrl[data-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.getAttribute("data-action");
+      dispatchCommand(action);
+    });
+  });
+
+  // App Launcher Tiles
+  document.querySelectorAll(".app-tile[data-app]").forEach((tile) => {
+    tile.addEventListener("click", () => {
+      const app = tile.getAttribute("data-app");
+      dispatchCommand(`open ${app}`);
+    });
+  });
+
+  // Chat Send button
+  const chatInput = document.getElementById("chatInput");
+  const sendBtn = document.getElementById("sendBtn");
+
+  const submitChat = () => {
+    const text = chatInput.value.trim();
+    if (text) {
+      dispatchCommand(text);
+      chatInput.value = "";
+    }
+  };
+
+  sendBtn.addEventListener("click", submitChat);
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitChat();
+  });
+
+  // Clipboard sync
+  const sendClipBtn = document.getElementById("sendClipBtn");
+  if (sendClipBtn) {
+    sendClipBtn.addEventListener("click", async () => {
+      const text = document.getElementById("clipboardInput").value;
+      if (!text) return;
+      if (isLaptopOnline) {
+        try {
+          await fetch(`http://${activeHost}/api/clipboard`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text })
+          });
+          showAssistantResponse("📋 Laptop clipboard updated!");
+        } catch (_) {
+          showAssistantResponse("Clipboard sync me error aaya.");
+        }
+      } else {
+        showAssistantResponse("Laptop offline hai Noaman.");
+      }
+    });
+  }
+
+  // Siren Test
+  const btnFindMyPhone = document.getElementById("btnFindMyPhone");
+  if (btnFindMyPhone) {
+    btnFindMyPhone.addEventListener("click", () => {
+      document.getElementById("sirenOverlay").style.display = "flex";
+      if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === "function") {
+        window.AndroidBridge.vibrate(1000);
+      }
+    });
+  }
+
+  const stopSirenBtn = document.getElementById("stopSirenBtn");
+  if (stopSirenBtn) {
+    stopSirenBtn.addEventListener("click", () => {
+      document.getElementById("sirenOverlay").style.display = "none";
+    });
+  }
+
+  // Flashlight button
+  const btnToggleTorch = document.getElementById("btnToggleTorch");
+  if (btnToggleTorch) {
+    btnToggleTorch.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.toggleTorch === "function") {
+        isTorchActive = !isTorchActive;
+        window.AndroidBridge.toggleTorch(isTorchActive);
+        btnToggleTorch.innerText = isTorchActive ? "🔦 Off" : "🔦 Torch";
+        showAssistantResponse(isTorchActive ? "Flashlight on kar di." : "Flashlight off kar di.");
+      }
+    });
+  }
+}
+
+// 6. Native Calls & WhatsApp
+function setupCallsAndWhatsApp() {
+  const btnDirectCall = document.getElementById("btnDirectCall");
+  const phoneCallInput = document.getElementById("phoneCallInput");
+
+  btnDirectCall.addEventListener("click", () => {
+    const phone = phoneCallInput.value.trim();
+    if (!phone) {
+      showAssistantResponse("Kripya ek valid phone number enter karein Noaman.");
+      return;
+    }
+
+    if (window.AndroidBridge && typeof window.AndroidBridge.makeCall === "function") {
+      showAssistantResponse(`Direct call connect ho rahi hai: ${phone}...`);
+      window.AndroidBridge.makeCall(phone);
+    } else {
+      window.location.href = `tel:${phone}`;
+    }
+  });
+
+  const btnSendWhatsApp = document.getElementById("btnSendWhatsApp");
+  const whatsappNumberInput = document.getElementById("whatsappNumberInput");
+  const whatsappMessageInput = document.getElementById("whatsappMessageInput");
+
+  btnSendWhatsApp.addEventListener("click", () => {
+    const phone = whatsappNumberInput.value.trim();
+    const msg = whatsappMessageInput.value.trim();
+
+    if (!phone || !msg) {
+      showAssistantResponse("Phone number aur message dono zaroori hain Noaman.");
+      return;
+    }
+
+    if (window.AndroidBridge && typeof window.AndroidBridge.sendWhatsApp === "function") {
+      showAssistantResponse(`WhatsApp auto-send dispatch ho raha hai...`);
+      window.AndroidBridge.sendWhatsApp(phone, msg);
+    } else {
+      window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`);
+    }
+  });
+}
+
+// 7. Screen Mirroring
+function setupScreenMirror() {
+  const screenImg = document.getElementById("screenImage");
+  const btnRefresh = document.getElementById("btnRefreshScreen");
+  const btnSnap = document.getElementById("btnSnapScreen");
+  const btnToggle = document.getElementById("btnToggleScreenStream");
+
+  const refreshScreen = () => {
+    if (!isLaptopOnline) {
+      screenImg.alt = "Laptop offline. Connect on same Wi-Fi to mirror screen.";
+      return;
+    }
+    screenImg.src = `http://${activeHost}/api/screen/snapshot?t=${Date.now()}`;
+  };
+
+  btnRefresh.addEventListener("click", refreshScreen);
+  btnSnap.addEventListener("click", () => {
+    dispatchCommand("screenshot");
+    setTimeout(refreshScreen, 1000);
+  });
+
+  let streaming = true;
+  btnToggle.addEventListener("click", () => {
+    streaming = !streaming;
+    btnToggle.innerText = streaming ? "⏸️ Pause Stream" : "▶️ Resume Stream";
+    if (streaming) startScreenStream();
+    else stopScreenStream();
+  });
+}
+
+function startScreenStream() {
+  stopScreenStream();
+  if (isLaptopOnline) {
+    const screenImg = document.getElementById("screenImage");
+    screenImg.src = `http://${activeHost}/api/screen/snapshot?t=${Date.now()}`;
+    screenStreamInterval = setInterval(() => {
+      if (currentTab === "tab-screen" && isLaptopOnline) {
+        screenImg.src = `http://${activeHost}/api/screen/snapshot?t=${Date.now()}`;
+      }
+    }, 1400);
+  }
+}
+
+function stopScreenStream() {
+  if (screenStreamInterval) {
+    clearInterval(screenStreamInterval);
+    screenStreamInterval = null;
+  }
+}
+
+// 8. Phone Camera AI Eye
+function setupCamera() {
+  const analyzeBtn = document.getElementById("analyzeCameraBtn");
+  analyzeBtn.addEventListener("click", () => {
+    const video = document.getElementById("cameraVideo");
+    const canvas = document.getElementById("cameraCanvas");
+    const resultBox = document.getElementById("visionResult");
+
+    if (!video.videoWidth) {
+      resultBox.innerText = "Camera feed abhi ready nahi hai.";
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    resultBox.innerText = "🔍 Image analyze ho rahi hai...";
+    showAssistantResponse("Image dekh rahi hu Noaman...");
+
+    // Send frame to server if online
+    if (isLaptopOnline) {
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      fetch(`http://${activeHost}/api/vision/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const text = data.analysis || "Analysis complete.";
+        resultBox.innerText = text;
+        showAssistantResponse(text);
+      })
+      .catch(() => {
+        resultBox.innerText = "Camera frame capture ho gaya hai. Local recognition active hai.";
+      });
+    } else {
+      setTimeout(() => {
+        resultBox.innerText = "Image captured! Standalone mode me basic visual sensing ready hai.";
+      }, 800);
+    }
+  });
+}
+
+function initCameraStream() {
+  const video = document.getElementById("cameraVideo");
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then((stream) => {
+        cameraStream = stream;
+        video.srcObject = stream;
+      })
+      .catch((err) => {
+        console.warn("Camera access warning:", err);
+      });
+  }
+}
+
+function stopCameraStream() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+  }
+}
+
+// 9. Voice & Speech Hooks
+function setupVoice() {
+  const micBtn = document.getElementById("micBtn");
+  micBtn.addEventListener("click", () => {
+    if (window.AndroidBridge && typeof window.AndroidBridge.startVoiceRecognition === "function") {
+      window.AndroidBridge.startVoiceRecognition();
+    } else {
+      showAssistantResponse("Native voice recognition available inside the Android APK.");
+    }
+  });
+
+  // Global callbacks called by MainActivity.kt
+  window.onSpeechStatus = function(status) {
+    const mic = document.getElementById("micBtn");
+    if (status === "listening") {
+      mic.classList.add("listening");
+      showAssistantResponse("🎙️ Sun rahi hu Noaman... Boliye");
+    } else {
+      mic.classList.remove("listening");
+    }
+  };
+
+  window.onNativeVoiceResult = function(spokenText) {
+    const mic = document.getElementById("micBtn");
+    mic.classList.remove("listening");
+    if (spokenText) {
+      document.getElementById("chatInput").value = spokenText;
+      dispatchCommand(spokenText);
+    }
+  };
+}
+
+// 10. Settings Modal
+function setupSettingsModal() {
+  const modal = document.getElementById("settingsModal");
+  const btnSettings = document.getElementById("btnSettings");
+  const statusBadge = document.getElementById("statusBadge");
+  const btnClose = document.getElementById("btnCloseModal");
+  const btnSave = document.getElementById("btnSaveIp");
+  const btnPing = document.getElementById("btnTestPing");
+  const ipInput = document.getElementById("laptopIpInput");
+  const statusBox = document.getElementById("modalStatusBox");
+
+  const openModal = () => {
+    ipInput.value = activeHost;
+    statusBox.innerText = `Current target: ${activeHost} (${isLaptopOnline ? "Online" : "Offline"})`;
+    modal.classList.add("active");
+  };
+
+  btnSettings.addEventListener("click", openModal);
+  statusBadge.addEventListener("click", openModal);
+  btnClose.addEventListener("click", () => modal.classList.remove("active"));
+
+  btnSave.addEventListener("click", () => {
+    const val = ipInput.value.trim();
+    if (val) {
+      activeHost = val;
+      localStorage.setItem("laptop_ip", val);
+      if (window.AndroidBridge && typeof window.AndroidBridge.setLaptopIp === "function") {
+        window.AndroidBridge.setLaptopIp(val);
+      }
+      statusBox.innerText = `Saved! Testing connection to ${val}...`;
+      checkConnection().then((online) => {
+        statusBox.innerText = online ? `🟢 Connected to ${val} successfully!` : `⚠️ Could not reach ${val}. Check Wi-Fi & laptop server.`;
+      });
+    }
+  });
+
+  btnPing.addEventListener("click", async () => {
+    const val = ipInput.value.trim() || activeHost;
+    statusBox.innerText = `Pinging ${val}...`;
+    const start = Date.now();
+    try {
+      const res = await fetch(`http://${val}/api/status`);
+      const latency = Date.now() - start;
+      if (res.ok) {
+        statusBox.innerText = `🟢 Ping 200 OK (${latency}ms). Connected!`;
+      } else {
+        statusBox.innerText = `⚠️ HTTP ${res.status} returned from ${val}.`;
+      }
+    } catch (e) {
+      statusBox.innerText = `❌ Unreachable (${Date.now() - start}ms). Ensure Laptop server is running on port 8000.`;
+    }
+  });
+}
