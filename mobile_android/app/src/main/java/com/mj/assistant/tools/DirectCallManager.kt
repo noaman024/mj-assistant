@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.mj.assistant.services.MJAccessibilityService
 
 /**
  * Superpower: Direct Phone Calling
