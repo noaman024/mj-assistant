@@ -1,0 +1,32 @@
+# Environment & Secrets
+.env
+*.env
+*.key
+*.pem
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+venv/
+.venv/
+
+# Assistant User Data & Privacy Vault
+data/contacts.json
+data/privacy_vault/
+data/backups/
+data/learned_rules.json
+
+# Android build artifacts
+mobile_android/.gradle/
+mobile_android/build/
+mobile_android/app/build/
+mobile_android/local.properties
+*.apk
+
+# IDE & Antigravity IDE cache
+.system_generated/
+.gemini/
+.idea/
+.vscode/

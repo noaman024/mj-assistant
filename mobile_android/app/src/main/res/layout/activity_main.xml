@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_deep"
+    android:padding="20dp">
+
+    <!-- Top Status Header -->
+    <TextView
+        android:id="@+id/txtConnectionStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CONNECTING..."
+        android:textColor="@color/cyan_accent"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:padding="8dp" />
+
+    <!-- Center Holographic Cockpit Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚡ MJ NATIVE"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtAssistantResponse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hey Noaman! MJ Mobile active hai. Boliye ya type kijiye."
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:padding="16dp"
+            android:background="@color/bg_card" />
+
+    </LinearLayout>
+
+    <!-- Bottom Command Dock -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btnMic"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:text="🎙️"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/editCommand"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Command dein Noaman..."
+            android:textColor="@color/white"
+            android:textColorHint="@color/text_muted"
+            android:layout_marginHorizontal="8dp"
+            android:padding="12dp"
+            android:background="@color/bg_card" />
+
+        <Button
+            android:id="@+id/btnSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SEND"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
+
+</LinearLayout>

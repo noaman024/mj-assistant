@@ -1,0 +1,16 @@
+{
+  "name": "MJ Mobile Controller",
+  "short_name": "MJ Controller",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e17",
+  "theme_color": "#00f0ff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

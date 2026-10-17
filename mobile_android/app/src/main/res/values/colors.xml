@@ -1,0 +1,10 @@
+<resources>
+    <color name="bg_deep">#060608</color>
+    <color name="bg_surface">#101014</color>
+    <color name="bg_card">#18181e</color>
+    <color name="cyan_accent">#00f0ff</color>
+    <color name="white">#FFFFFF</color>
+    <color name="text_muted">#8e8e93</color>
+    <color name="danger">#ef4444</color>
+    <color name="green_accent">#00ff66</color>
+</resources>

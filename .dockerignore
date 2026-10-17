@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.github
+.gemini
+.pytest_cache
+build/
+dist/
+*.spec
+*.bat
+*.log
+.env.local

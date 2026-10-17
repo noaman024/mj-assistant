@@ -1,0 +1,26 @@
+# Core Web & API Bridge
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+websockets>=12.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# AI & Language Models
+google-genai>=2.0.0
+
+# System Telemetry & Automation
+psutil>=5.9.0
+Pillow>=10.2.0
+pyautogui>=0.9.54
+pyperclip>=1.8.2
+
+# Speech & Audio
+edge-tts>=6.1.10
+pyttsx3>=2.90
+SpeechRecognition>=3.10.0
+sounddevice>=0.4.6
+
+# Desktop GUI
+customtkinter>=5.2.0

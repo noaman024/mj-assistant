@@ -1,0 +1,7 @@
+{
+  "test_greeting_skill": {
+    "name": "test_greeting_skill",
+    "description": "Prints a dynamic greeting test",
+    "script_path": "data\\skills\\test_greeting_skill.py"
+  }
+}

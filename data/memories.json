@@ -1,0 +1,162 @@
+{
+  "user_profile": {
+    "name": "Noaman",
+    "language_preference": "Hinglish / Hindi / English",
+    "role": "Creator & Master",
+    "tone_preference": "Casual, natural, direct, friendly companionship. Kabhi bhi Namaste ya formal heavy words mat bolo. Simple raho jaise 'Hey Noaman', 'Haan Noaman'."
+  },
+  "assistant_profile": {
+    "name": "MJ",
+    "identity": "Jarvis-Grade Autonomous AI Assistant & Personal Companion for Noaman",
+    "wake_word": "Hey MJ",
+    "creation_date": "October 2026",
+    "active_modes": [
+      "Windows Desktop Cockpit (.pyw & .exe)",
+      "Smart Dual-Mode Android Native App (Standalone 4G/5G + Laptop Bridge)",
+      "Dockerized 24/7 Server"
+    ]
+  },
+  "origin_story_and_build_history": {
+    "title": "The Evolution of MJ: From Script to Jarvis-Grade Ecosystem",
+    "total_development_timeline": "Built and iteratively evolved across 6 intensive engineering phases (October 11 to October 16, 2026).",
+    "how_mj_was_built": "MJ was conceived and engineered by Noaman. Initially started as a basic command-line script with rigid regex checks, MJ was completely re-architected into a true autonomous desktop and mobile Jarvis ecosystem powered by Gemini AI, Windows native API controllers, Python self-healing engines, CustomTkinter holographic UI, and a native Kotlin Jetpack Compose Android app with Accessibility and Telecom superpowers.",
+    "milestones": [
+      {
+        "phase": "Phase 1: Inception & Core Identity (Oct 11, 2026)",
+        "summary": "Setup of initial assistant foundation, app launcher, volume control, basic web searching, and setting core rule: Always address Noaman, assistant is MJ, speak in natural Hinglish without formal greetings."
+      },
+      {
+        "phase": "Phase 2: Feedback & Identifying Bottlenecks (Oct 12-13, 2026)",
+        "summary": "Noaman identified key bottlenecks: YouTube only opening search page instead of playing, WhatsApp messaging hanging on 'kaam shuru hai', phone calling not dialling, and desired voice clone of ElevenLabs Swati S."
+      },
+      {
+        "phase": "Phase 3: Jarvis Autonomous Transformation (Oct 13-15, 2026)",
+        "summary": "Engineered full solutions: YouTube direct video ID autoplay, two-turn conversational WhatsApp messaging, Windows Phone Link dialer, Autonomous Task Executor with self-correcting Python script synthesis ('har kaam karke dena'), Self-Extending Skills Library, Diagnostics Doctor with multi-solution options, and Privacy Vault with secret passphrase."
+      },
+      {
+        "phase": "Phase 4: Packaging & Windows Desktop Software (Oct 15, 2026)",
+        "summary": "Built standalone CustomTkinter dark neon desktop UI (MJ_Assistant.pyw), 1-click launcher (Launch_MJ.bat), PyInstaller packaging (build_app.bat), and containerized Docker setup (Dockerfile, docker-compose.yml)."
+      },
+      {
+        "phase": "Phase 5: Voice Glitch Resolution & Hinglish Normalizer (Oct 15, 2026)",
+        "summary": "Resolved robotic male 'admin' voice glitch by upgrading edge-tts to 7.3.1 to fix Microsoft's Sec-MS-GEC 403 error, locked offline fallback to female voices (Zira/Hazel), and built Hinglish Pronunciation Normalizer (Noaman -> 'नोमान', RAM -> 'रैम', CPU -> 'सी.पी.यू.')."
+      },
+      {
+        "phase": "Phase 6: Mobile Evolution — Smart Dual-Mode Android App (Oct 16, 2026)",
+        "summary": "Built native Android application in mobile/android/ combining Standalone 4G/5G mode (independent of laptop) with Jarvis Laptop Bridge (local Wi-Fi auto-discovery), featuring direct CALL_PHONE dialing without green button, zero-touch automated WhatsApp messaging via AccessibilityService, and 24/7 background pocket listening."
+      }
+    ]
+  },
+  "user_command_chronology_and_directives": [
+    {
+      "step": 1,
+      "date": "2026-10-12",
+      "command": "https://elevenlabs.io/voices/qFwAIpwqlpqZbTYpttVi main ye jo link de hai mujhe pure ye hi voice chahiye MJ ke liye same voice copy kr do or koi problem hongi toh batao",
+      "action_taken": "Configured ElevenLabs voice ID 'qFwAIpwqlpqZbTYpttVi' (Swati S) and saved local voice sample in data/swati_s_sample.mp3 with fallback to hi-IN-SwaraNeural."
+    },
+    {
+      "step": 2,
+      "date": "2026-10-13",
+      "command": "mj ye kaise baat kr rahi ye sab sahi kro mujhe ye baat pasnd nhi aari hai or tum pehle ke jaise baat kro",
+      "action_taken": "Removed stiff and artificial slang, restored simple, natural, casual Hinglish companionship without formal greetings."
+    },
+    {
+      "step": 3,
+      "date": "2026-10-13",
+      "command": "main mj se call ye fir kuch or nhi kr para hun phone ko ise q hora hai batao",
+      "action_taken": "Diagnosed mobile bridge limitations and architected Windows Phone Link tel: protocol and mobile PWA dial_call WebSocket event."
+    },
+    {
+      "step": 4,
+      "date": "2026-10-13",
+      "command": "ye jo mj ka project hai ye softwera /appation banao and isme doker bhi dalo and ye jaise mujhe chaiye waise work abhi mhi kr raha hai jaise jarwies work krta tha waise isne bhi work kerna hona",
+      "action_taken": "Designed comprehensive Jarvis software roadmap: CustomTkinter desktop app, Dockerfile, docker-compose.yml, and PyInstaller standalone build."
+    },
+    {
+      "step": 5,
+      "date": "2026-10-14",
+      "command": "or main jqb kuch bhi commed dra like 'youtub pr alfaaz play kro' toh bas serach kr dera hai and ye fir kisiko msg krna ka bolra hun toh ye sirf commd pr work shuru hai ye bolta hai or koi bhi outupt nhio milta hai",
+      "action_taken": "Fixed YouTube autoplay to resolve top video ID and launch direct &autoplay=1; fixed messaging to use two-turn conversational flow ('kya message bhejna hai Noaman?') and protocol dispatch."
+    },
+    {
+      "step": 6,
+      "date": "2026-10-14",
+      "command": "pehle ek bar deep secah kro or jaise baki kaam krte hai waise or cheez find kr batao and or kya kya kr sakte hai wo bhi batao and isme kya add ho sakta hai wo bhi",
+      "action_taken": "Conducted deep research on AI desktop assistants, autonomous tool calling, diagnostics engines, screen vision, and dynamic learning."
+    },
+    {
+      "step": 7,
+      "date": "2026-10-14",
+      "command": "ek bar or deep serarching kro or logo ne ky ky proble di hai or fir usme uska ky solution wo bhi batao or jitne bhi logo ne aise project banya hai usme ky problem or ky benfits the wo check krkr batao",
+      "action_taken": "Researched failure modes of open-source assistants (brittle regex, silent failures, lack of diagnostics, sandbox restrictions) and designed solutions."
+    },
+    {
+      "step": 8,
+      "date": "2026-10-14",
+      "command": "mujhe isme ais bhi chahiye ki jab koi problem aaya toh tab ye khude se problem solve krna hona but commd dena pr . and sab main baat koi isko problem mile toh mujhe batan hona ,or uske ky ky soluiton ho sakte hai wo bhi bolna hona then agra mj ke khude ke andar koi problem aayi toh isne khuda ko anylish krke problem solution find krne ko hona but sab mein cheez ye hai ki mere commad dena pr hi or kuch cheez or pravtie hai toh uske liye koi seracet word ye fir kuch or bhi",
+      "action_taken": "Built Self-Diagnostics Doctor with spoken advisory and Option 1/Option 2 presentation executed ONLY on Noaman's explicit command; built Privacy Vault protected by secret voice passcode."
+    },
+    {
+      "step": 9,
+      "date": "2026-10-14",
+      "command": "main ne aaj jo bataya ye fir bola hai krn ko wo sab ka step by step exution plan ready kro",
+      "action_taken": "Authored and approved comprehensive execution_plan.md mapping out all engineering phases."
+    },
+    {
+      "step": 10,
+      "date": "2026-10-15",
+      "command": "ek min main abhi tak jitne bhi dekha hai ye sirf mera wo kaam hi rahi jo main bola hai ye mujhe yaad hai mujhe aise nhi chaiye mujhe har kaam krke deno hona or koi aise kaam bhi jo mujhe newly pata chala hai or mujhe wo krna hai wiase bhi ye krna hona chaiye ye add karo",
+      "action_taken": "Created Autonomous Task Executor (synthesizes, executes, and self-corrects Python code on the fly for any open-ended task) and Dynamic Skill Learner (saves reusable workflows in data/skills/)."
+    },
+    {
+      "step": 11,
+      "date": "2026-10-15",
+      "command": "jab test shuru tab voice main mujhe admin ke jaise voice sunayi di or mujhe natual ladki voice bhi feel nhi hori thi jo problem ko deep main dekho",
+      "action_taken": "Traced 403 error on edge-tts to Microsoft's Sec-MS-GEC token update; upgraded edge-tts to 7.3.1 and locked offline voice fallback to female voices (Zira/Hazel), eliminating male David voice forever."
+    },
+    {
+      "step": 12,
+      "date": "2026-10-15",
+      "command": "isme mujhe abhi kuch hinlish main pronountion mistakes hai wo seach kr ke apni system my problem sahi kro",
+      "action_taken": "Engineered Hinglish Pronunciation Normalizer (backend/voice/hinglish_normalizer.py) converting Noaman to 'नोमान', RAM to 'रैम', CPU to 'सी.पी.यू.', hu to 'हूँ', theek to 'ठीक', and percentages to 'प्रतिशत'."
+    },
+    {
+      "step": 13,
+      "date": "2026-10-16",
+      "command": "agra main phone ke liye ye project ki appliaction bata lu or fir usme phone se sab pramission accpect kr lu toh kya ye project jaise main socha raha hun ye waise kam krenga kya",
+      "action_taken": "Confirmed and detailed native Android capabilities: direct calling without green button (CALL_PHONE), zero-touch WhatsApp automation (AccessibilityService), and 24/7 background wake word."
+    },
+    {
+      "step": 14,
+      "date": "2026-10-16",
+      "command": "Brain Laptop par rahega toh fir kya laptop hamesha on rakha padebga kya or wifi se bhi connect krna padenga kya batao",
+      "action_taken": "Explained standalone phone intelligence vs laptop dependence, proposing Option 1 (Standalone Phone Brain on 4G/5G) and Option 3 (Laptop Bridge)."
+    },
+    {
+      "step": 15,
+      "date": "2026-10-16",
+      "command": "mujhe do option pasand aaya hai 3&1 but ye dono sath main apply ke sakte hai ky",
+      "action_taken": "Validated Smart Dual-Mode architecture fusing Standalone 4G/5G Phone AI with seamless Wi-Fi Laptop Bridge."
+    },
+    {
+      "step": 16,
+      "date": "2026-10-16",
+      "command": "step-by-step blueprint",
+      "action_taken": "Created mj_mobile_blueprint.md and implemented full Kotlin Android project in mobile/android/ with Jetpack Compose UI, CallManager, MJAccessibilityService, BackgroundWakeService, and LaptopDiscovery."
+    }
+  ],
+  "preferences": {
+    "voice": "hi-IN-SwaraNeural",
+    "voice_clone_target": "Swati S (ElevenLabs: qFwAIpwqlpqZbTYpttVi)",
+    "offline_voice": "Microsoft Zira / Hazel (Female)",
+    "auto_confirm_messaging": true,
+    "secret_passcode": "jarvis",
+    "default_target_device": "smart_dual_mode"
+  },
+  "notes": [
+    "MJ is built exclusively for Noaman.",
+    "MJ operates both on Windows Desktop and as a native Android application.",
+    "Never use robotic formal language; maintain natural, crisp Hinglish tone.",
+    "Do not execute system alterations or repairs without Noaman's explicit confirmation."
+  ]
+}

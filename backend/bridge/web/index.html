@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MJ Mobile Controller | Noaman's AI</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00f0ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header>
+    <div class="logo-group">
+      <div class="logo-badge">MJ</div>
+      <div class="header-title">Noaman's Hub</div>
+    </div>
+    <div class="connection-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connecting</span>
+    </div>
+  </header>
+
+  <!-- Laptop Live Telemetry Bar -->
+  <div class="telemetry-bar">
+    <div class="tele-pill">
+      <span class="label">Laptop CPU</span>
+      <span class="val" id="valCpu">--%</span>
+    </div>
+    <div class="tele-pill">
+      <span class="label">Laptop RAM</span>
+      <span class="val" id="valRam">--%</span>
+    </div>
+    <div class="tele-pill">
+      <span class="label">Laptop Batt</span>
+      <span class="val" id="valBatt">--%</span>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="tab-remote" id="tabRemoteBtn">🎮 Remote</button>
+    <button class="tab-btn" data-tab="tab-screen" id="tabScreenBtn">🖥️ Screen</button>
+    <button class="tab-btn" data-tab="tab-camera" id="tabCameraBtn">👁️ AI Eye</button>
+    <button class="tab-btn" data-tab="tab-tools" id="tabToolsBtn">⚡ Tools</button>
+    <button class="tab-btn" data-tab="tab-calls" id="tabCallsBtn">📞 Calls</button>
+  </nav>
+
+  <!-- Main Content Sections -->
+  <main>
+    <!-- TAB 1: REMOTE CONTROLS -->
+    <section class="tab-pane active" id="tab-remote">
+      <!-- System Controls -->
+      <div class="card">
+        <div class="card-title">System Controls</div>
+        <div class="control-grid">
+          <button class="btn-ctrl" data-action="volume badhao" id="btnVolUp">
+            <span class="icon">🔊</span>
+            <span>Vol Up</span>
+          </button>
+          <button class="btn-ctrl" data-action="volume kam karo" id="btnVolDown">
+            <span class="icon">🔉</span>
+            <span>Vol Down</span>
+          </button>
+          <button class="btn-ctrl" data-action="mute karo" id="btnMute">
+            <span class="icon">🔇</span>
+            <span>Mute</span>
+          </button>
+          <button class="btn-ctrl" data-action="minimize all" id="btnMinimize">
+            <span class="icon">🗗</span>
+            <span>Desktop</span>
+          </button>
+          <button class="btn-ctrl danger" data-action="lock pc" id="btnLock">
+            <span class="icon">🔒</span>
+            <span>Lock PC</span>
+          </button>
+          <button class="btn-ctrl danger" data-action="sleep pc" id="btnSleep">
+            <span class="icon">💤</span>
+            <span>Sleep PC</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Storage & Memory Optimizer (Zip Vault) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Storage & Memory Optimizer</span>
+          <span style="color:var(--cyan); font-size:11px;">📦 ZIP VAULT</span>
+        </div>
+        <div class="control-grid" style="grid-template-columns: repeat(2, 1fr);">
+          <button class="btn-ctrl" data-action="data zip karo" id="btnZipDataMobile">
+            <span class="icon">📦</span>
+            <span>Zip Data Vault</span>
+          </button>
+          <button class="btn-ctrl" data-action="zip check karo" id="btnZipCheckMobile">
+            <span class="icon">🔍</span>
+            <span>Inspect Zip</span>
+          </button>
+          <button class="btn-ctrl" data-action="zip open karo" id="btnZipOpenMobile">
+            <span class="icon">📂</span>
+            <span>Extract Zip</span>
+          </button>
+          <button class="btn-ctrl" data-action="less memory optimize karo" id="btnOptimizeMemMobile">
+            <span class="icon">⚡</span>
+            <span>Optimize RAM</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick App Launcher Grid -->
+      <div class="card">
+        <div class="card-title">Launch Apps on Laptop</div>
+        <div class="apps-grid">
+          <button class="app-tile" data-app="chrome" id="appChrome">
+            <span class="icon">🌐</span>
+            <span>Chrome</span>
+          </button>
+          <button class="app-tile" data-app="code" id="appCode">
+            <span class="icon">💻</span>
+            <span>VS Code</span>
+          </button>
+          <button class="app-tile" data-app="notepad" id="appNotepad">
+            <span class="icon">📝</span>
+            <span>Notepad</span>
+          </button>
+          <button class="app-tile" data-app="calc" id="appCalc">
+            <span class="icon">🔢</span>
+            <span>Calc</span>
+          </button>
+          <button class="app-tile" data-app="taskmgr" id="appTaskmgr">
+            <span class="icon">📊</span>
+            <span>Task Mgr</span>
+          </button>
+          <button class="app-tile" data-app="cmd" id="appTerminal">
+            <span class="icon">⌨️</span>
+            <span>Terminal</span>
+          </button>
+          <button class="app-tile" data-app="explorer" id="appExplorer">
+            <span class="icon">📁</span>
+            <span>Files</span>
+          </button>
+          <button class="app-tile" data-app="settings" id="appSettings">
+            <span class="icon">⚙️</span>
+            <span>Settings</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: LIVE SCREEN MIRROR -->
+    <section class="tab-pane" id="tab-screen">
+      <div class="card">
+        <div class="card-title">
+          <span>Live Laptop Screen</span>
+          <span style="color:var(--cyan); font-size:11px;">● LIVE</span>
+        </div>
+        <div class="screen-wrapper">
+          <img id="screenImage" src="/api/screen/snapshot" alt="Laptop Screen Stream">
+          <div class="screen-refresh-badge">Live Mirror</div>
+        </div>
+        <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+          Live view of your laptop desktop over Wi-Fi. Auto-refreshes every ~1.2s.
+        </p>
+      </div>
+    </section>
+
+    <!-- TAB 3: PHONE CAMERA AS AI EYE -->
+    <section class="tab-pane" id="tab-camera">
+      <div class="card">
+        <div class="card-title">AI Camera Eye (Vision Input)</div>
+        <div class="camera-box">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+        </div>
+        <div class="camera-actions">
+          <button class="btn-primary" id="analyzeCameraBtn">🔍 MJ, Dekho Ye Kya Hai</button>
+        </div>
+        <div class="vision-result" id="visionResult">
+          Point your phone camera at anything and tap the button above to let MJ describe or read it.
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: TOOLS & CLIPBOARD -->
+    <section class="tab-pane" id="tab-tools">
+      <div class="card">
+        <div class="card-title">Wireless Clipboard Sync</div>
+        <textarea class="clip-textarea" id="clipboardInput" placeholder="Type or paste text to send to laptop clipboard..."></textarea>
+        <button class="btn-primary" id="sendClipBtn" style="margin-top:10px;">📋 Send to Laptop Clipboard</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Cross-Device Actions</div>
+        <button class="btn-ctrl" data-action="screenshot" id="btnSnapLaptop" style="width:100%; margin-bottom:8px;">
+          <span class="icon">📸</span>
+          <span>Take Laptop Screenshot</span>
+        </button>
+        <button class="btn-ctrl" data-action="battery" id="btnCheckLaptopBatt" style="width:100%;">
+          <span class="icon">🔋</span>
+          <span>Check Laptop Health</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 5: AI CALL SCREENING & VOICEMAILS -->
+    <section class="tab-pane" id="tab-calls">
+      <div class="card">
+        <div class="card-title">
+          <span>AI Call Screening</span>
+          <span style="color:var(--cyan); font-size:11px;">● AUTO-SCREEN ACTIVE</span>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+          Jab aap busy ya college me hote hain, MJ missed call attend karke caller se baat karti hai aur unka message summarize karke bhejti hai.
+        </p>
+        <button class="btn-primary" id="btnSimulateCall">🧪 Test Incoming Call Screen</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Recent Voicemails</span>
+          <button id="btnClearVmBtn" style="background:none; border:none; color:var(--cyan); font-size:11px; cursor:pointer;">Mark Read</button>
+        </div>
+        <div id="voicemailsList" style="display:flex; flex-direction:column; gap:10px;">
+          <p style="font-size:12px; color:var(--text-muted);">Voicemails load ho rahi hain...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Find My Phone Loud Siren Overlay -->
+  <div class="siren-overlay" id="sirenOverlay">
+    <h1>🚨 MJ FIND MY PHONE 🚨</h1>
+    <p style="font-size:18px; color:#fff;">Phone ringing activated by Noaman from Laptop!</p>
+    <button id="stopSirenBtn">🔕 Stop Siren</button>
+  </div>
+
+  <!-- Bottom Floating Chat & Push-to-Talk -->
+  <div class="bottom-dock">
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Speak or type command for MJ...">
+      <button class="btn-mic" id="micBtn" title="Hold/Tap to Speak">🎙️</button>
+      <button class="btn-ctrl" id="sendBtn" style="padding:10px 14px; border-radius:20px;">➤</button>
+    </div>
+    <div class="response-card" id="responseBar">MJ ready for commands.</div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
