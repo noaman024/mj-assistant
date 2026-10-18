@@ -20,6 +20,12 @@ from backend.tools.autonomous_executor import autonomous_executor
 from backend.core.skill_learner import skill_learner
 from backend.tools.vision_analyzer import vision_analyzer
 from backend.tools.compression_manager import compression_manager
+from backend.agents.morning_digest import morning_digest
+from backend.agents.deep_research import deep_research
+from backend.agents.react_agent import react_agent
+from backend.tools.code_interpreter import code_interpreter
+from backend.core.fact_extractor import fact_extractor
+import asyncio
 
 logger = logging.getLogger("MJ.Orchestrator")
 
@@ -283,6 +289,42 @@ class AssistantOrchestrator:
             await tts.speak(ack_msg)
             return ack_msg
 
+        # OpenJarvis 1: Morning Digest & Daily Briefing Intent
+        if nlp_res.intent == "MORNING_DIGEST":
+            res = await morning_digest.generate_briefing()
+            await tts.speak(res)
+            return res
+
+        # OpenJarvis 2: Deep Research Intent
+        if nlp_res.intent == "DEEP_RESEARCH":
+            topic = nlp_res.entities.query or query_clean
+            res_dict = await deep_research.research(topic)
+            res = res_dict.get("report", "Research complete.")
+            await tts.speak(res)
+            return res
+
+        # OpenJarvis 3: Code Execution Intent (Safe Python REPL)
+        if nlp_res.intent == "CODE_EXECUTION":
+            code = nlp_res.entities.query or query_clean
+            res_dict = code_interpreter.execute(code)
+            if res_dict["success"]:
+                res = f"Code execute ho gaya Noaman (in {res_dict['latency_ms']}ms):\n{res_dict['output']}"
+            else:
+                res = f"Code me error aaya Noaman: {res_dict['error']}"
+            await tts.speak(res)
+            return res
+
+        # OpenJarvis 4: Memory Recall Intent
+        if nlp_res.intent == "MEMORY_RECALL":
+            facts = fact_extractor.get_all_facts()
+            if facts:
+                bullet_facts = "\n".join([f"- {f}" for f in facts[-6:]])
+                res = f"Mujhe aapke baare me ye durable facts yaad hain Noaman:\n{bullet_facts}"
+            else:
+                res = f"Abhi tak koi specific facts store nahi hue hain Noaman."
+            await tts.speak(res)
+            return res
+
         # 14. File Creation Intent
         if "file banao" in query_lower or "create file" in query_lower or "note banao" in query_lower:
             from backend.tools.file_manager import file_manager
@@ -292,8 +334,17 @@ class AssistantOrchestrator:
             await tts.speak(res)
             return res
 
-        # 15. General AI Conversation, Reasoning & Companionship
-        response = await llm.generate_response(query_clean)
+        # 15. General AI Conversation, Reasoning & Companionship (with Memory Context)
+        facts = fact_extractor.get_relevant_facts(query_clean, limit=3)
+        context_hint = ""
+        if facts:
+            context_hint = f"\n[Remembered Facts about {USER_NAME}: {'; '.join(facts)}]\n"
+
+        response = await llm.generate_response(f"{context_hint}{query_clean}")
+
+        # OpenJarvis Durable Fact Extraction in background
+        asyncio.create_task(fact_extractor.extract_and_remember(query_clean, response))
+
         await tts.speak(response)
         return response
 

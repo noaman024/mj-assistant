@@ -29,10 +29,27 @@ def _start_bridge_server():
     except Exception as e:
         pass
 
+def _start_proactive_scheduler():
+    """Runs autonomous task scheduler in background"""
+    try:
+        import asyncio
+        from backend.core.proactive_scheduler import proactive_scheduler
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(proactive_scheduler.start())
+        loop.run_forever()
+    except Exception:
+        pass
+
 if __name__ == "__main__":
     # 1. Start Server in background daemon thread
     server_thread = threading.Thread(target=_start_bridge_server, daemon=True)
     server_thread.start()
+
+    # 1b. Start Proactive Background Scheduler
+    sched_thread = threading.Thread(target=_start_proactive_scheduler, daemon=True)
+    sched_thread.start()
+
     time.sleep(1.0)
 
     # 2. Launch Futuristic Desktop Cockpit in Standalone Native Window Mode

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="monochrome">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MJ Desktop Cockpit | AI Personal Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/desktop_style.css">
+</head>
+<body>
+
+  <!-- Top Cyber HUD Bar -->
+  <header class="hud-bar">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <span>⚡ MJ CORE</span>
+        <span class="brand-badge">v6.0</span>
+      </div>
+      <div class="master-pill">
+        <span>Commander:</span>
+        <strong id="hudMaster">Noaman</strong>
+      </div>
+      <div class="nlp-pill" title="Dual-Tier NLP Active: Fast Semantic NLU (<1ms) + Deep LLM Parser">
+        <span class="nlp-dot"></span>
+        <span>NLP NEURAL</span>
+      </div>
+    </div>
+
+    <!-- Center HUD: Theme Switcher & Live Clock -->
+    <div class="hud-center-group">
+      <div class="theme-switcher-bar">
+        <span class="theme-pill-label">Theme:</span>
+        <button class="theme-btn active" data-theme-pick="monochrome" title="Monochrome Noir (Black & White Stealth)"></button>
+        <button class="theme-btn" data-theme-pick="cyan" title="Jarvis Cyan (Electric Neon)"></button>
+        <button class="theme-btn" data-theme-pick="ironman" title="Mark 85 (Gold & Crimson)"></button>
+        <button class="theme-btn" data-theme-pick="matrix" title="Matrix Emerald (Cyber Green)"></button>
+        <button class="theme-btn" data-theme-pick="obsidian" title="Obsidian Void (Midnight Purple)"></button>
+      </div>
+
+      <div class="hud-clock-widget">
+        <span class="hud-clock-time" id="hudClockTime">--:--:--</span>
+        <span class="hud-clock-date" id="hudClockDate">---, -- ---</span>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Gauges & SFX -->
+    <div class="metrics-section">
+      <button class="hud-sfx-toggle" id="hudSfxToggle" title="Toggle Procedural Sci-Fi SFX">
+        <span id="sfxIcon">🔊</span>
+        <span id="sfxLabel">SFX</span>
+      </button>
+
+      <div class="metric-gauge" title="Laptop CPU Usage">
+        <span>CPU</span>
+        <span class="gauge-val" id="hudCpu">--%</span>
+      </div>
+      <div class="metric-gauge" title="Laptop RAM Usage">
+        <span>RAM</span>
+        <span class="gauge-val" id="hudRam">--%</span>
+      </div>
+      <div class="metric-gauge" title="Battery Status">
+        <span>BATT</span>
+        <span class="gauge-val" id="hudBatt">--%</span>
+      </div>
+      <div class="status-indicator">
+        <div class="dot-pulse" id="hudStatusDot"></div>
+        <span id="hudStatusText" style="color:var(--cyan);">SYSTEM ONLINE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Cockpit Layout -->
+  <main class="cockpit">
+    
+    <!-- LEFT PANEL: System & App Control -->
+    <aside class="panel">
+      <div class="panel-header">
+        <span>System Controls</span>
+        <span>⚡ HUD</span>
+      </div>
+
+      <div class="control-grid-vertical">
+        <button class="btn-cyber" data-action="volume badhao" id="btnDeskVolUp">
+          <span class="icon">🔊</span>
+          <span>Volume Up (+5%)</span>
+        </button>
+        <button class="btn-cyber" data-action="volume kam karo" id="btnDeskVolDown">
+          <span class="icon">🔉</span>
+          <span>Volume Down (-5%)</span>
+        </button>
+        <button class="btn-cyber" data-action="mute karo" id="btnDeskMute">
+          <span class="icon">🔇</span>
+          <span>Mute / Unmute Audio</span>
+        </button>
+        <button class="btn-cyber" data-action="minimize all" id="btnDeskMinimize">
+          <span class="icon">🗗</span>
+          <span>Minimize All (Show Desktop)</span>
+        </button>
+        <button class="btn-cyber danger" data-action="lock pc" id="btnDeskLock">
+          <span class="icon">🔒</span>
+          <span>Lock Workstation</span>
+        </button>
+        <button class="btn-cyber danger" data-action="sleep pc" id="btnDeskSleep">
+          <span class="icon">💤</span>
+          <span>Sleep Mode</span>
+        </button>
+      </div>
+
+      <div class="panel-header" style="margin-top:6px;">
+        <span>Jarvis Engine</span>
+        <span>🧠 AUTONOMOUS</span>
+      </div>
+
+      <div class="control-grid-vertical">
+        <button class="btn-cyber" data-action="system check karo" id="btnDeskDiag">
+          <span class="icon">🩺</span>
+          <span>System Diagnostics & Advisory</span>
+        </button>
+        <button class="btn-cyber" data-action="kya seekha hai batao" id="btnDeskSkills">
+          <span class="icon">🧠</span>
+          <span>Learned Skills Registry</span>
+        </button>
+        <button class="btn-cyber" data-action="lock vault" id="btnDeskLockVault">
+          <span class="icon">🛡️</span>
+          <span>Lock Privacy Vault</span>
+        </button>
+        <button class="btn-cyber" data-action="pause gana" id="btnDeskMediaPlayPause">
+          <span class="icon">⏯️</span>
+          <span>Media Play / Pause</span>
+        </button>
+        <button class="btn-cyber" data-action="data zip karo" id="btnDeskZipStorage">
+          <span class="icon">📦</span>
+          <span>Zip Storage (Compress Vault)</span>
+        </button>
+        <button class="btn-cyber" data-action="zip check karo" id="btnDeskZipCheck">
+          <span class="icon">🔍</span>
+          <span>Inspect Zip Archive</span>
+        </button>
+        <button class="btn-cyber" data-action="zip open karo" id="btnDeskZipExtract">
+          <span class="icon">📂</span>
+          <span>Extract / Open Zip</span>
+        </button>
+      </div>
+
+      <div class="panel-header" style="margin-top:6px;">
+        <span>Desktop App Matrix</span>
+        <span>🖥️ APPS</span>
+      </div>
+
+      <div class="desktop-apps-grid">
+        <button class="app-cube" data-app="capcut" id="appDeskCapCut" title="Open CapCut Video Editor">
+          <span class="icon">🎬</span>
+          <span>CapCut</span>
+        </button>
+        <button class="app-cube" data-app="blender" id="appDeskBlender" title="Open Blender 3D">
+          <span class="icon">🎨</span>
+          <span>Blender</span>
+        </button>
+        <button class="app-cube" data-app="discord" id="appDeskDiscord" title="Open Discord">
+          <span class="icon">💬</span>
+          <span>Discord</span>
+        </button>
+        <button class="app-cube" data-app="wps" id="appDeskWps" title="Open WPS Office">
+          <span class="icon">📑</span>
+          <span>WPS Office</span>
+        </button>
+        <button class="app-cube" data-app="youtube" id="appDeskYoutube" title="Open YouTube">
+          <span class="icon">▶️</span>
+          <span>YouTube</span>
+        </button>
+        <button class="app-cube" data-app="chrome" id="appDeskChrome" title="Open Google Chrome">
+          <span class="icon">🌐</span>
+          <span>Chrome</span>
+        </button>
+        <button class="app-cube" data-app="code" id="appDeskCode" title="Open VS Code">
+          <span class="icon">💻</span>
+          <span>VS Code</span>
+        </button>
+        <button class="app-cube" data-app="notepad" id="appDeskNotepad" title="Open Notepad">
+          <span class="icon">📝</span>
+          <span>Notepad</span>
+        </button>
+        <button class="app-cube" data-app="calc" id="appDeskCalc" title="Open Calculator">
+          <span class="icon">🔢</span>
+          <span>Calc</span>
+        </button>
+        <button class="app-cube" data-app="taskmgr" id="appDeskTaskmgr" title="Open Task Manager">
+          <span class="icon">📊</span>
+          <span>Task Mgr</span>
+        </button>
+        <button class="app-cube" data-app="cmd" id="appDeskCmd" title="Open Windows Terminal">
+          <span class="icon">⌨️</span>
+          <span>Terminal</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CENTER PANEL: Holographic Core, Audio Visualizer & Conversation Deck -->
+    <section class="panel center-stage">
+      <div class="hologram-container">
+        <!-- Multi-ring Rotating Orb -->
+        <div class="orb-wrapper" id="orbWrapper">
+          <div class="cyber-ring ring-outer"></div>
+          <div class="cyber-ring ring-mid"></div>
+          <div class="cyber-ring ring-inner"></div>
+          <div class="core-sphere" id="coreSphere" title="Tap to Toggle Listening">
+            <span class="core-avatar-icon">🌸</span>
+          </div>
+        </div>
+
+        <!-- Visualizer Mode Switcher Bar -->
+        <div class="vis-selector-bar">
+          <button class="vis-mode-btn active" data-vis="ribbon" title="Harmonic Sine Ribbon">🌊 Ribbon</button>
+          <button class="vis-mode-btn" data-vis="reactor" title="Arc Reactor Energy Core">⚛️ Reactor</button>
+          <button class="vis-mode-btn" data-vis="spectrum" title="Cyber Frequency Equalizer">📊 Spectrum</button>
+        </div>
+
+        <!-- 60 FPS Audio Frequency Waveform Canvas -->
+        <canvas class="visualizer-canvas" id="audioVisualizer" width="520" height="72"></canvas>
+
+        <div class="stage-state-pill" id="stageStatePill">
+          <span>● STANDBY / READY</span>
+        </div>
+      </div>
+
+      <!-- Live Conversation Deck -->
+      <div class="conversation-deck" id="conversationDeck">
+        <div class="speech-bubble assistant">
+          <div class="speech-meta">
+            <span>🌸 MJ Personal Assistant</span>
+            <span>Online</span>
+          </div>
+          <p>Hey Noaman! Stealth Cockpit ready hai. Black & White mode active hai, aur saare tools online hain.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Phone Radar, Scratchpad, Memory & Voicemails -->
+    <aside class="panel">
+      <div class="panel-header">
+        <span>Cross-Device Radar</span>
+        <span>📱 PHONE</span>
+      </div>
+
+      <div class="phone-card">
+        <div class="phone-card-row">
+          <strong style="color:#fff;">Connected Phone:</strong>
+          <span id="phoneDeviceName" style="color:var(--cyan); font-weight:700;">Standby</span>
+        </div>
+        <div class="phone-card-row">
+          <span>Battery Status:</span>
+          <span id="phoneBattVal" style="color:var(--cyan); font-weight:700;">--%</span>
+        </div>
+        <button class="btn-cyber" data-action="phone dhundo" id="btnDeskFindPhone" style="margin-top:4px;">
+          <span class="icon">🚨</span>
+          <span>Ring Phone (Find My Phone)</span>
+        </button>
+        <button class="btn-cyber" id="btnShowPhoneQr" style="margin-top:4px;">
+          <span class="icon">📲</span>
+          <span>Pair Phone (QR & Install Link)</span>
+        </button>
+
+        <!-- Dynamic QR & Pair Box -->
+        <div id="phoneQrBox" style="display:none; flex-direction:column; align-items:center; gap:8px; margin-top:8px; padding:10px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(255,255,255,0.12);">
+          <img id="phoneQrImg" src="" alt="Scan QR on Phone" style="width:140px; height:140px; border-radius:8px; background:#fff; padding:4px;">
+          <a id="phoneUrlLink" href="#" target="_blank" style="color:var(--cyan); font-size:11px; word-break:break-all; text-decoration:none; font-weight:700;">Loading link...</a>
+          <span style="font-size:10px; color:var(--text-muted); text-align:center; line-height:1.3;">1. Phone camera se scan karein ya Chrome me open karein.<br>2. Three dots (⋮) par tap karke <strong>"Install app"</strong> karein!</span>
+        </div>
+      </div>
+
+      <!-- Quick Scratchpad / Sticky Notes -->
+      <div class="panel-header" style="margin-top:6px;">
+        <span>Quick Scratchpad</span>
+        <span>📝 NOTES</span>
+      </div>
+
+      <div class="scratchpad-card">
+        <textarea id="deskScratchpad" class="scratchpad-textarea" placeholder="Type quick notes, ideas, reminders... Auto-saved instantly!"></textarea>
+        <div class="scratchpad-footer">
+          <span id="scratchpadStatus">✓ Saved</span>
+          <button id="btnClearScratchpad" class="btn-mini">Clear</button>
+        </div>
+      </div>
+
+      <!-- NLP Neural Engine Status -->
+      <div class="panel-header" style="margin-top:6px;">
+        <span>NLP Neural Status</span>
+        <span>🧠 NLU / NER</span>
+      </div>
+
+      <div class="memory-vault-card" id="nlpTelemetryCard">
+        <div class="memory-item">
+          <span>Pipeline:</span>
+          <strong style="color:var(--cyan);">Dual-Tier (Fast NLU + Deep LLM)</strong>
+        </div>
+        <div class="memory-item">
+          <span>Active Parser:</span>
+          <strong id="nlpActiveParser">Zero-Latency Local</strong>
+        </div>
+        <div class="memory-item">
+          <span>Last Intent:</span>
+          <strong id="nlpLastIntent" style="color:var(--cyan);">STANDBY</strong>
+        </div>
+        <div class="memory-item">
+          <span>Sentiment:</span>
+          <strong id="nlpSentiment">Neutral (0.0)</strong>
+        </div>
+      </div>
+
+      <!-- Memory Vault Glimpse -->
+      <div class="panel-header" style="margin-top:6px;">
+        <span>Memory Vault</span>
+        <span>🧠 VAULT</span>
+      </div>
+
+      <div class="memory-vault-card">
+        <div class="memory-item">
+          <span>Commander:</span>
+          <strong>Noaman</strong>
+        </div>
+        <div class="memory-item">
+          <span>Voice Persona:</span>
+          <strong>MJ (Warm Feminine)</strong>
+        </div>
+        <div class="memory-item">
+          <span>Storage Format:</span>
+          <strong>Compressed ZIP</strong>
+        </div>
+        <div class="memory-item">
+          <span>Sensitivity:</span>
+          <strong>Pre-speech Ring Buffer</strong>
+        </div>
+      </div>
+
+      <!-- Call Screening & Voicemails -->
+      <div class="panel-header" style="margin-top:6px;">
+        <span>Call Screening & Voicemails</span>
+        <button id="btnDeskClearVm" style="background:none; border:none; color:var(--cyan); font-size:11px; cursor:pointer;">Mark Read</button>
+      </div>
+
+      <div class="vm-list" id="deskVoicemailsList">
+        <p style="font-size:12px; color:var(--text-muted);">Voicemails load ho rahi hain...</p>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Bottom Command Dock -->
+  <footer class="command-dock">
+    <div class="input-container">
+      <button class="btn-dock-mic" id="btnDeskMic" title="Click to Speak / Push to Talk">🎙️</button>
+      <input type="text" class="cyber-input" id="deskCmdInput" placeholder="Command dein Noaman: 'Notepad kholo', 'CapCut kholo', 'Volume badhao'..." autocomplete="off">
+      <button class="btn-dock-send" id="btnDeskSend">DISPATCH ➤</button>
+    </div>
+  </footer>
+
+  <script src="/static/desktop.js"></script>
+</body>
+</html>

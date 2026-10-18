@@ -376,7 +376,34 @@ class FastSemanticNLU:
             return NLPResult(intent="APP_LAUNCH", confidence=conf, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
 
         # -------------------------------------------------------------
-        # 11. AUTONOMOUS TASK INTENT
+        # 11. OPENJARVIS POWERS (Morning Digest, Deep Research, Code Execution, Memory Recall)
+        # -------------------------------------------------------------
+        if any(w in norm_q for w in ["morning digest", "daily briefing", "aaj ka briefing", "aaj ka update", "aaj kya kya hai", "morning update", "din kaisa hai", "aaj ka plan"]):
+            entities.action = "morning_digest"
+            return NLPResult(intent="MORNING_DIGEST", confidence=0.98, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+
+        if any(w in norm_q for w in ["deep research", "research karo", "detailed research", "investigate karo", "in-depth study", "research on"]):
+            topic = re.sub(r"\b(deep research|research karo|detailed research|investigate karo|in-depth study|research on|par|pe|karo|zara|please)\b", "", norm_q).strip()
+            entities.query = topic or norm_q
+            entities.action = "deep_research"
+            return NLPResult(intent="DEEP_RESEARCH", confidence=0.96, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+
+        if any(w in norm_q for w in ["run python", "python code", "execute python", "python script", "calculate with code", "code run karo"]):
+            code = query
+            for prefix in ["run python", "python code", "execute python", "python script", "code run karo"]:
+                if prefix in norm_q:
+                    code = re.sub(prefix, "", query, flags=re.IGNORECASE).strip(" :;\n")
+                    break
+            entities.query = code
+            entities.action = "run_code"
+            return NLPResult(intent="CODE_EXECUTION", confidence=0.96, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+
+        if any(w in norm_q for w in ["kya yaad hai", "mere baare me kya pata hai", "my facts", "what do you remember", "durable facts", "apni memory dikhao"]):
+            entities.action = "memory_recall"
+            return NLPResult(intent="MEMORY_RECALL", confidence=0.97, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+
+        # -------------------------------------------------------------
+        # 12. AUTONOMOUS TASK INTENT
         # -------------------------------------------------------------
         task_triggers = [
             "organize files", "speedtest", "wi-fi speed", "download karo", "convert karo",

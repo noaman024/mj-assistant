@@ -234,6 +234,51 @@ async def get_voicemail_audio(filename: str):
         return FileResponse(audio_path, media_type="audio/wav")
     raise HTTPException(status_code=404, detail="Audio file not found")
 
+# --- OpenJarvis Agent Endpoints ---
+class ResearchRequest(BaseModel):
+    topic: str
+
+class CodeRequest(BaseModel):
+    code: str
+
+class MemoryFactRequest(BaseModel):
+    fact: str
+
+@app.get("/api/agent/digest")
+async def get_morning_digest():
+    """Generates on-demand Morning Digest briefing"""
+    from backend.agents.morning_digest import morning_digest
+    briefing = await morning_digest.generate_briefing()
+    return {"status": "success", "briefing": briefing}
+
+@app.post("/api/agent/research")
+async def run_deep_research(req: ResearchRequest):
+    """Executes multi-hop Deep Research on a topic"""
+    from backend.agents.deep_research import deep_research
+    result = await deep_research.research(req.topic)
+    return {"status": "success", "research": result}
+
+@app.post("/api/agent/code")
+async def execute_python_sandbox(req: CodeRequest):
+    """Executes sandboxed Python code via CodeInterpreter"""
+    from backend.tools.code_interpreter import code_interpreter
+    result = code_interpreter.execute(req.code)
+    return {"status": "success", "execution": result}
+
+@app.get("/api/agent/memory")
+async def get_durable_facts():
+    """Returns stored durable facts about Noaman"""
+    from backend.core.fact_extractor import fact_extractor
+    facts = fact_extractor.get_all_facts()
+    return {"status": "success", "facts": facts}
+
+@app.post("/api/agent/memory")
+async def save_durable_fact(req: MemoryFactRequest):
+    """Saves a new durable fact into persistent memory"""
+    from backend.core.fact_extractor import fact_extractor
+    saved = fact_extractor.save_fact(req.fact)
+    return {"status": "success", "saved": saved}
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await phone_hub.connect(websocket)

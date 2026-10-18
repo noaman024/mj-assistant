@@ -1,6 +1,0 @@
-<resources>
-    <string name="app_name">MJ Assistant</string>
-    <string name="accessibility_service_desc">Enables MJ Personal Assistant to automate WhatsApp messages on your voice command.</string>
-    <string name="notification_channel_name">MJ Background Wake Service</string>
-    <string name="notification_channel_desc">Listens for 'Hey MJ' voice commands in the background.</string>
-</resources>

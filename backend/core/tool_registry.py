@@ -10,6 +10,10 @@ from backend.core.skill_learner import skill_learner
 from backend.core.diagnostics import diagnostics_engine
 from backend.core.security import security_vault
 from backend.tools.compression_manager import compression_manager
+from backend.tools.code_interpreter import code_interpreter
+from backend.agents.morning_digest import morning_digest
+from backend.agents.deep_research import deep_research
+from backend.agents.react_agent import react_agent
 
 logger = logging.getLogger("MJ.ToolRegistry")
 
@@ -176,6 +180,47 @@ TOOL_DEFINITIONS = [
             "type": "OBJECT",
             "properties": {}
         }
+    },
+    {
+        "name": "execute_python_code",
+        "description": "Safely runs sandboxed Python code with AST security validation and returns output",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "code": {"type": "STRING", "description": "Python source code snippet to execute"}
+            },
+            "required": ["code"]
+        }
+    },
+    {
+        "name": "deep_research",
+        "description": "Performs multi-hop web and local research on a complex topic with cited reports",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "topic": {"type": "STRING", "description": "Subject or question to thoroughly investigate"}
+            },
+            "required": ["topic"]
+        }
+    },
+    {
+        "name": "morning_digest",
+        "description": "Synthesizes an energetic spoken morning briefing covering PC health, tasks, and calls",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {}
+        }
+    },
+    {
+        "name": "react_agent_task",
+        "description": "Executes complex multi-step computer tasks via autonomous ReAct reasoning loop",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "goal": {"type": "STRING", "description": "Multi-step goal to solve"}
+            },
+            "required": ["goal"]
+        }
     }
 ]
 
@@ -267,6 +312,25 @@ class ToolExecutor:
 
             elif tool_name == "optimize_storage":
                 return compression_manager.auto_optimize_storage()
+
+            elif tool_name == "execute_python_code":
+                res = code_interpreter.execute(args.get("code", ""))
+                if res["success"]:
+                    return f"Execution Successful (in {res['latency_ms']}ms):\n{res['output']}"
+                else:
+                    return f"Execution Error: {res['error']}"
+
+            elif tool_name == "deep_research":
+                topic = args.get("topic", "")
+                res = await deep_research.research(topic)
+                return res["report"]
+
+            elif tool_name == "morning_digest":
+                return await morning_digest.generate_briefing()
+
+            elif tool_name == "react_agent_task":
+                goal = args.get("goal", "")
+                return await react_agent.execute_task(goal)
 
             return f"Tool '{tool_name}' mila nahi Noaman."
         except Exception as e:
