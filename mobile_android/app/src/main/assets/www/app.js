@@ -121,6 +121,8 @@ async function dispatchCommand(query) {
   const cleanCmd = query.trim();
 
   showAssistantResponse(`Soch rahi hu...`);
+  const label = document.getElementById("hudVoiceLabel");
+  if (label) label.innerText = "EXECUTING...";
 
   // Haptic feedback
   if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === "function") {
@@ -137,7 +139,8 @@ async function dispatchCommand(query) {
       const data = await res.json();
       const reply = data.response || "Command executed on Laptop.";
       showAssistantResponse(reply);
-      playMobileTTS(reply);
+      speakResponse(reply);
+      if (label) label.innerText = "JARVIS CORE ONLINE";
       return;
     } catch (e) {
       console.warn("Laptop command failed, falling back to local bridge:", e);
@@ -148,8 +151,23 @@ async function dispatchCommand(query) {
   if (window.AndroidBridge && typeof window.AndroidBridge.dispatchLocalCommand === "function") {
     const localReply = window.AndroidBridge.dispatchLocalCommand(cleanCmd);
     showAssistantResponse(localReply);
+    speakResponse(localReply);
   } else {
-    showAssistantResponse(`Laptop offline hai Noaman. Main phone standalone mode me hu.`);
+    const fallback = `Laptop offline hai Noaman. Main phone standalone mode me hu.`;
+    showAssistantResponse(fallback);
+    speakResponse(fallback);
+  }
+  if (label) label.innerText = "JARVIS CORE ONLINE";
+}
+
+function speakResponse(text) {
+  if (!text || !text.trim()) return;
+  if (isLaptopOnline) {
+    playMobileTTS(text);
+  } else if (window.AndroidBridge && typeof window.AndroidBridge.speakNative === "function") {
+    setCoreActive(true);
+    window.AndroidBridge.speakNative(text);
+    setTimeout(() => setCoreActive(false), Math.min(Math.max(text.length * 80, 2000), 7000));
   }
 }
 
@@ -538,8 +556,10 @@ function setupVoice() {
   window.onNativeVoiceResult = function(spokenText) {
     const mic = document.getElementById("micBtn");
     const core = document.getElementById("btnCoreVoice");
+    const label = document.getElementById("hudVoiceLabel");
     mic.classList.remove("listening");
     if (core) core.classList.remove("active-pulse");
+    if (label) label.innerText = "JARVIS CORE ONLINE";
     currentAmplitude = 0;
 
     if (spokenText) {

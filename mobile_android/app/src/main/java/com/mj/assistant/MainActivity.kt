@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -23,11 +25,13 @@ import androidx.core.content.ContextCompat
 import com.mj.assistant.bridge.AndroidBridge
 import com.mj.assistant.services.MJForegroundService
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var webView: WebView
     private lateinit var bridge: AndroidBridge
     private var speechRecognizer: SpeechRecognizer? = null
+    private var tts: TextToSpeech? = null
+    private var isTtsReady: Boolean = false
 
     private val PERMISSIONS_REQUEST_CODE = 101
 
@@ -54,6 +58,8 @@ class MainActivity : AppCompatActivity() {
 
         checkAndRequestPermissions()
         startBackgroundService()
+
+        tts = TextToSpeech(this, this)
 
         webView = findViewById(R.id.webViewCockpit)
         setupWebView()
@@ -194,11 +200,10 @@ class MainActivity : AppCompatActivity() {
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val spoken = matches?.firstOrNull() ?: ""
                     evalJs("window.onMicAmplitude && window.onMicAmplitude(0);")
+                    evalJs("window.onSpeechStatus && window.onSpeechStatus('idle');")
                     if (spoken.isNotEmpty()) {
                         val escaped = escapeJs(spoken)
                         evalJs("window.onNativeVoiceResult && window.onNativeVoiceResult('$escaped');")
-                    } else {
-                        evalJs("window.onSpeechStatus && window.onSpeechStatus('idle');")
                     }
                 }
 
@@ -220,6 +225,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            isTtsReady = true
+            try {
+                val inLocale = Locale("en", "IN")
+                val res = tts?.setLanguage(inLocale)
+                if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    tts?.setLanguage(Locale.US)
+                }
+            } catch (_: Exception) {
+                tts?.setLanguage(Locale.US)
+            }
+            tts?.setPitch(1.05f)
+            tts?.setSpeechRate(1.0f)
+        }
+    }
+
+    fun speak(text: String) {
+        runOnUiThread {
+            try {
+                if (isTtsReady && tts != null) {
+                    tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "MJ_NATIVE_TTS_${System.currentTimeMillis()}")
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     private fun escapeJs(str: String): String {
         return str.replace("\\", "\\\\")
             .replace("'", "\\'")
@@ -236,5 +268,9 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         speechRecognizer?.destroy()
+        try {
+            tts?.stop()
+            tts?.shutdown()
+        } catch (_: Exception) {}
     }
 }

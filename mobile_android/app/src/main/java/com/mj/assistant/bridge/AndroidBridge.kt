@@ -163,62 +163,156 @@ class AndroidBridge(
     }
 
     @JavascriptInterface
+    fun speakNative(text: String) {
+        activity.speak(text)
+    }
+
+    @JavascriptInterface
     fun dispatchLocalCommand(query: String): String {
         val q = query.lowercase().trim()
-        return when {
-            q.contains("battery") -> {
-                val batt = getBatteryLevel()
-                "Phone battery level $batt percent hai Noaman."
+        val reply = parseAndExecuteLocal(q)
+
+        activity.runOnUiThread {
+            try {
+                Toast.makeText(activity, reply, Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {}
+        }
+        activity.speak(reply)
+        return reply
+    }
+
+    private fun parseAndExecuteLocal(q: String): String {
+        // 1. YouTube Commands (English + Hindi / Hinglish)
+        if (q.contains("youtube") || q.contains("yt") || q.contains("yu tube") || q.contains("yutube")) {
+            deviceController.launchApp("youtube")
+            return "YouTube open kar rahi hu Noaman!"
+        }
+
+        // 2. WhatsApp Commands
+        if (q.contains("whatsapp") || q.contains("wa ") || q.endsWith(" wa")) {
+            if (q.contains("message") || q.contains("bhejo") || q.contains("send")) {
+                return "WhatsApp message bhejne ke liye Calls tab me number aur message enter karein Noaman."
             }
-            q.contains("torch on") || q.contains("flashlight on") -> {
+            deviceController.launchApp("whatsapp")
+            return "WhatsApp open kar rahi hu Noaman!"
+        }
+
+        // 3. Torch / Flashlight
+        if (q.contains("torch") || q.contains("flashlight") || q.contains("falsh")) {
+            return if (q.contains("off") || q.contains("band") || q.contains("bujhao") || q.contains("roko")) {
+                toggleTorch(false)
+                "Torch off kar di hai Noaman."
+            } else {
                 toggleTorch(true)
                 "Torch on kar di hai Noaman!"
             }
-            q.contains("torch off") || q.contains("flashlight off") -> {
-                toggleTorch(false)
-                "Torch off kar di hai."
+        }
+
+        // 4. Volume Up / Badhao
+        if (q.contains("volume up") || q.contains("awaz badhao") || q.contains("aawaz badhao") ||
+            q.contains("sound badhao") || q.contains("tez karo") || q.contains("volume badha")) {
+            val v = volumeUp()
+            return "Media volume $v percent kar diya hai Noaman."
+        }
+
+        // 5. Volume Down / Kam karo
+        if (q.contains("volume down") || q.contains("awaz kam") || q.contains("aawaz kam") ||
+            q.contains("sound kam") || q.contains("dheema") || q.contains("volume ghata")) {
+            val v = volumeDown()
+            return "Media volume $v percent kar diya hai Noaman."
+        }
+
+        // 6. Mute / Silent
+        if (q.contains("mute") || q.contains("silent") || q.contains("shant")) {
+            mute()
+            return "Phone silent kar diya hai Noaman."
+        }
+
+        // 7. Unmute
+        if (q.contains("unmute") || q.contains("silent hatao")) {
+            unmute()
+            return "Phone unmute kar diya hai Noaman."
+        }
+
+        // 8. Bluetooth
+        if (q.contains("bluetooth")) {
+            openBluetoothSettings()
+            return "Bluetooth settings open kar di hain Noaman."
+        }
+
+        // 9. Wi-Fi
+        if (q.contains("wifi") || q.contains("wi-fi")) {
+            openWifiSettings()
+            return "Wi-Fi settings open kar di hain Noaman."
+        }
+
+        // 10. Camera
+        if (q.contains("camera") || q.contains("photo") || q.contains("selfie")) {
+            deviceController.launchApp("camera")
+            return "Camera open kar rahi hu Noaman!"
+        }
+
+        // 11. Chrome / Browser
+        if (q.contains("chrome") || q.contains("browser") || q.contains("google")) {
+            deviceController.launchApp("chrome")
+            return "Chrome browser open kar rahi hu Noaman!"
+        }
+
+        // 12. Music / Spotify
+        if (q.contains("spotify") || q.contains("music") || q.contains("gana")) {
+            deviceController.launchApp("spotify")
+            return "Music player open kar rahi hu Noaman!"
+        }
+
+        // 13. Calculator
+        if (q.contains("calculator") || q.contains("hisab")) {
+            deviceController.launchApp("calculator")
+            return "Calculator open kar rahi hu Noaman!"
+        }
+
+        // 14. Settings
+        if (q.contains("setting")) {
+            deviceController.launchApp("settings")
+            return "Settings open kar rahi hu Noaman!"
+        }
+
+        // 15. Battery
+        if (q.contains("battery") || q.contains("charge") || q.contains("charging") || q.contains("batt")) {
+            val batt = getBatteryLevel()
+            return "Phone battery level $batt percent hai Noaman."
+        }
+
+        // 16. General App Launcher (Strip filler words)
+        if (q.contains("open") || q.contains("kholo") || q.contains("chalao") ||
+            q.contains("launch") || q.contains("start")) {
+            var target = q
+            val stopWords = listOf(
+                "open", "kholo", "chalao", "launch", "start", "karo", "kar", "do", "de",
+                "phone", "me", "mein", "ke", "andar", "anda", "app", "application", "please", "zara", "ko"
+            )
+            for (sw in stopWords) {
+                target = target.replace(Regex("\\b$sw\\b"), " ")
             }
-            q.contains("volume up") || q.contains("awaz badhao") -> {
-                val v = volumeUp()
-                "Media volume $v percent kar diya hai."
-            }
-            q.contains("volume down") || q.contains("awaz kam") -> {
-                val v = volumeDown()
-                "Media volume $v percent kar diya hai."
-            }
-            q.contains("mute") -> {
-                mute()
-                "Phone mute kar diya hai."
-            }
-            q.contains("unmute") -> {
-                unmute()
-                "Phone unmute kar diya hai."
-            }
-            q.contains("bluetooth") -> {
-                openBluetoothSettings()
-                "Bluetooth settings open kar di hain Noaman."
-            }
-            q.contains("wifi") || q.contains("wi-fi") -> {
-                openWifiSettings()
-                "Wi-Fi panel open kar diya hai Noaman."
-            }
-            q.startsWith("open ") || q.startsWith("launch ") -> {
-                val target = q.removePrefix("open ").removePrefix("launch ").trim()
-                if (launchApp(target)) {
-                    "$target open kar rahi hu Noaman!"
-                } else {
-                    "$target app install nahi mila Noaman."
-                }
-            }
-            q.contains("call") -> {
-                "Calling feature active hai Noaman. Number dial kijiye ya Calls tab use kijiye."
-            }
-            q.contains("kaise ho") || q.contains("kya haal") -> {
-                "Main bilkul theek hu Noaman! Aap bataiye, main aapki kya help kar sakti hu?"
-            }
-            else -> {
-                "Sun rahi hu Noaman! Laptop se offline hu, par saare phone controls bilkul ready hain."
+            target = target.trim()
+            if (target.isNotEmpty() && deviceController.launchApp(target)) {
+                return "$target open kar rahi hu Noaman!"
             }
         }
+
+        // 17. Conversational queries
+        if (q.contains("kaise ho") || q.contains("kaisi ho") || q.contains("kya haal") || q.contains("kya chal raha")) {
+            return "Main bilkul theek hu Noaman! Aap bataiye, main aapki kya help kar sakti hu?"
+        }
+        if (q.contains("hi") || q.contains("hey") || q.contains("hello") || q.contains("mj")) {
+            return "Haan Noaman, sun rahi hu! Boliye kya madat karu?"
+        }
+        if (q.contains("shukriya") || q.contains("thanks") || q.contains("thank you")) {
+            return "Always welcome Noaman! Main hamesha aapke sath hu."
+        }
+        if (q.contains("kya kar sakti ho") || q.contains("help") || q.contains("features")) {
+            return "Main phone me YouTube, WhatsApp, Torch, Volume control aur apps launch kar sakti hu Noaman!"
+        }
+
+        return "Sun rahi hu Noaman! Laptop se offline hu, par saare phone controls bilkul ready hain."
     }
 }
