@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MJ Cockpit | Noaman's AI</title>
+  <meta name="theme-color" content="#00f0ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MJ JARVIS | Noaman's AI</title>
+  <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -54,6 +58,22 @@
 
   <!-- Main Content Panes -->
   <main>
+    <!-- JARVIS Arc Reactor Core & Live Audio Visualizer -->
+    <div class="jarvis-core-container">
+      <div class="jarvis-orb-wrapper" id="mobileOrb">
+        <div class="jarvis-ring ring-1"></div>
+        <div class="jarvis-ring ring-2"></div>
+        <div class="jarvis-core-center" id="btnCoreVoice" title="Tap to Speak">
+          <span class="core-glyph">⚡</span>
+        </div>
+      </div>
+      <canvas id="mobileVisualizerCanvas" class="mobile-vis-canvas" width="300" height="38"></canvas>
+      <div class="hud-status-badge" id="hudVoiceStatus">
+        <span class="pulse-dot"></span>
+        <span id="hudVoiceLabel">JARVIS CORE ONLINE</span>
+      </div>
+    </div>
+
     <!-- TAB 1: REMOTE CONTROLS -->
     <section class="tab-pane active" id="tab-remote">
       <!-- System Controls -->
@@ -343,5 +363,14 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((reg) => console.log('[PWA] ServiceWorker active:', reg.scope))
+          .catch((err) => console.log('[PWA] ServiceWorker error:', err));
+      });
+    }
+  </script>
 </body>
 </html>

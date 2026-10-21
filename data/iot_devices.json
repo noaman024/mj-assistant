@@ -1,0 +1,75 @@
+{
+  "bedroom_light": {
+    "id": "bedroom_light",
+    "name": "Bedroom Light",
+    "aliases": [
+      "bedroom light",
+      "kamre ki light",
+      "light",
+      "batti"
+    ],
+    "type": "light",
+    "protocol": "rest",
+    "state": "off",
+    "ip": "192.168.1.105",
+    "endpoints": {
+      "on": "http://192.168.1.105/cm?cmnd=Power%20On",
+      "off": "http://192.168.1.105/cm?cmnd=Power%20Off",
+      "toggle": "http://192.168.1.105/cm?cmnd=Power%20Toggle",
+      "status": "http://192.168.1.105/cm?cmnd=Power"
+    }
+  },
+  "desk_lamp": {
+    "id": "desk_lamp",
+    "name": "Desk Lamp",
+    "aliases": [
+      "desk lamp",
+      "table lamp",
+      "study light",
+      "table light"
+    ],
+    "type": "light",
+    "protocol": "rest",
+    "state": "off",
+    "ip": "192.168.1.106",
+    "endpoints": {
+      "on": "http://192.168.1.106/relay/0?turn=on",
+      "off": "http://192.168.1.106/relay/0?turn=off",
+      "toggle": "http://192.168.1.106/relay/0?turn=toggle",
+      "status": "http://192.168.1.106/relay/0"
+    }
+  },
+  "smart_plug": {
+    "id": "smart_plug",
+    "name": "Workstation Smart Plug",
+    "aliases": [
+      "smart plug",
+      "charger plug",
+      "switch",
+      "plug"
+    ],
+    "type": "switch",
+    "protocol": "mqtt",
+    "state": "on",
+    "mqtt_topic": "cmnd/mj_smart_plug/POWER",
+    "mqtt_state_topic": "stat/mj_smart_plug/POWER"
+  },
+  "ac_unit": {
+    "id": "ac_unit",
+    "name": "AC Controller",
+    "aliases": [
+      "ac",
+      "air conditioner",
+      "cooler"
+    ],
+    "type": "climate",
+    "protocol": "rest",
+    "state": "off",
+    "temperature": 24,
+    "endpoints": {
+      "on": "http://192.168.1.110/api/ac/power?state=on",
+      "off": "http://192.168.1.110/api/ac/power?state=off",
+      "set_temp": "http://192.168.1.110/api/ac/temp?val="
+    }
+  }
+}

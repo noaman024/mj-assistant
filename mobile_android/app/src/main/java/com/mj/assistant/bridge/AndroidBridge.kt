@@ -1,8 +1,6 @@
 package com.mj.assistant.bridge
 
 import android.content.Context
-import android.content.Intent
-import android.hardware.camera2.CameraManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.VibrationEffect
@@ -11,11 +9,9 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.widget.Toast
 import com.mj.assistant.MainActivity
+import com.mj.assistant.tools.AudioStreamManager
+import com.mj.assistant.tools.DeviceController
 import com.mj.assistant.tools.DirectCallManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * JavaScript Bridge exposed as `window.AndroidBridge` inside WebView.
@@ -27,7 +23,8 @@ class AndroidBridge(
 ) {
     private val prefs = activity.getSharedPreferences("mj_prefs", Context.MODE_PRIVATE)
     private val callManager = DirectCallManager(activity)
-    private var isTorchOn = false
+    private val deviceController = DeviceController(activity)
+    private val audioStreamManager = AudioStreamManager(activity)
 
     @JavascriptInterface
     fun getLaptopIp(): String {
@@ -61,26 +58,83 @@ class AndroidBridge(
     }
 
     @JavascriptInterface
+    fun launchApp(appNameOrPackage: String): Boolean {
+        vibrate(40)
+        return deviceController.launchApp(appNameOrPackage)
+    }
+
+    @JavascriptInterface
     fun toggleTorch(enable: Boolean): Boolean {
-        return try {
-            val cameraManager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-            val cameraId = cameraManager.cameraIdList[0]
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                cameraManager.setTorchMode(cameraId, enable)
-                isTorchOn = enable
-                vibrate(40)
-                true
-            } else {
-                false
-            }
-        } catch (e: Exception) {
-            false
-        }
+        vibrate(40)
+        return deviceController.setTorch(enable)
     }
 
     @JavascriptInterface
     fun isTorchActive(): Boolean {
-        return isTorchOn
+        return deviceController.isTorchOn()
+    }
+
+    @JavascriptInterface
+    fun volumeUp(): Int {
+        vibrate(30)
+        return deviceController.volumeUp()
+    }
+
+    @JavascriptInterface
+    fun volumeDown(): Int {
+        vibrate(30)
+        return deviceController.volumeDown()
+    }
+
+    @JavascriptInterface
+    fun setVolume(percent: Int): Int {
+        vibrate(30)
+        return deviceController.setVolume(percent)
+    }
+
+    @JavascriptInterface
+    fun mute(): Boolean {
+        vibrate(30)
+        return deviceController.muteVolume()
+    }
+
+    @JavascriptInterface
+    fun unmute(): Boolean {
+        vibrate(30)
+        return deviceController.unmuteVolume()
+    }
+
+    @JavascriptInterface
+    fun getVolume(): Int {
+        return deviceController.getVolumePercent()
+    }
+
+    @JavascriptInterface
+    fun openBluetoothSettings(): Boolean {
+        vibrate(30)
+        return deviceController.openBluetoothSettings()
+    }
+
+    @JavascriptInterface
+    fun openWifiSettings(): Boolean {
+        vibrate(30)
+        return deviceController.openWifiSettings()
+    }
+
+    @JavascriptInterface
+    fun playTTSAudio(url: String) {
+        activity.runOnUiThread {
+            audioStreamManager.playTTSStream(url) {
+                activity.runOnUiThread {
+                    webView.evaluateJavascript("window.onAudioStreamFinished && window.onAudioStreamFinished();", null)
+                }
+            }
+        }
+    }
+
+    @JavascriptInterface
+    fun stopTTSAudio() {
+        audioStreamManager.stopAudio()
     }
 
     @JavascriptInterface
@@ -124,6 +178,38 @@ class AndroidBridge(
                 toggleTorch(false)
                 "Torch off kar di hai."
             }
+            q.contains("volume up") || q.contains("awaz badhao") -> {
+                val v = volumeUp()
+                "Media volume $v percent kar diya hai."
+            }
+            q.contains("volume down") || q.contains("awaz kam") -> {
+                val v = volumeDown()
+                "Media volume $v percent kar diya hai."
+            }
+            q.contains("mute") -> {
+                mute()
+                "Phone mute kar diya hai."
+            }
+            q.contains("unmute") -> {
+                unmute()
+                "Phone unmute kar diya hai."
+            }
+            q.contains("bluetooth") -> {
+                openBluetoothSettings()
+                "Bluetooth settings open kar di hain Noaman."
+            }
+            q.contains("wifi") || q.contains("wi-fi") -> {
+                openWifiSettings()
+                "Wi-Fi panel open kar diya hai Noaman."
+            }
+            q.startsWith("open ") || q.startsWith("launch ") -> {
+                val target = q.removePrefix("open ").removePrefix("launch ").trim()
+                if (launchApp(target)) {
+                    "$target open kar rahi hu Noaman!"
+                } else {
+                    "$target app install nahi mila Noaman."
+                }
+            }
             q.contains("call") -> {
                 "Calling feature active hai Noaman. Number dial kijiye ya Calls tab use kijiye."
             }
@@ -131,7 +217,7 @@ class AndroidBridge(
                 "Main bilkul theek hu Noaman! Aap bataiye, main aapki kya help kar sakti hu?"
             }
             else -> {
-                "Sun rahi hu Noaman! Laptop abhi connect nahi hua hai, to main phone mode me operate kar rahi hu."
+                "Sun rahi hu Noaman! Laptop se offline hu, par saare phone controls bilkul ready hain."
             }
         }
     }

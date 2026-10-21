@@ -97,6 +97,10 @@ async def main():
     server_thread = threading.Thread(target=start_bridge_server, daemon=True)
     server_thread.start()
 
+    # Start Autonomous Background Scheduler & Event Watchdog
+    from backend.core.proactive_scheduler import proactive_scheduler
+    await proactive_scheduler.start()
+
     args = [arg.lower() for arg in sys.argv[1:]]
 
     if any(a in args for a in ["--help", "-h"]):

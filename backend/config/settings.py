@@ -18,14 +18,14 @@ WAKE_WORDS = ["hey mj", "mj", "hello mj"]
 
 # AI Model Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
 # Voice Configuration (Edge-TTS Fallback)
 # en-IN-NeerjaNeural or hi-IN-SwaraNeural or ur-IN-GulNeural for natural subcontinent accent
 TTS_VOICE = os.getenv("TTS_VOICE", "hi-IN-SwaraNeural")
-TTS_RATE = os.getenv("TTS_RATE", "+0%")
+TTS_RATE = os.getenv("TTS_RATE", "+15%")
 TTS_PITCH = os.getenv("TTS_PITCH", "+0Hz")
 
 # ElevenLabs Configuration (Exact Voice Clone / Community Voice: Swati S)

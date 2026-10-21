@@ -54,6 +54,22 @@
 
   <!-- Main Content Panes -->
   <main>
+    <!-- JARVIS Arc Reactor Core & Live Audio Visualizer -->
+    <div class="jarvis-core-container">
+      <div class="jarvis-orb-wrapper" id="mobileOrb">
+        <div class="jarvis-ring ring-1"></div>
+        <div class="jarvis-ring ring-2"></div>
+        <div class="jarvis-core-center" id="btnCoreVoice" title="Tap to Speak">
+          <span class="core-glyph">⚡</span>
+        </div>
+      </div>
+      <canvas id="mobileVisualizerCanvas" class="mobile-vis-canvas" width="300" height="38"></canvas>
+      <div class="hud-status-badge" id="hudVoiceStatus">
+        <span class="pulse-dot"></span>
+        <span id="hudVoiceLabel">JARVIS CORE ONLINE</span>
+      </div>
+    </div>
+
     <!-- TAB 1: REMOTE CONTROLS -->
     <section class="tab-pane active" id="tab-remote">
       <!-- System Controls -->

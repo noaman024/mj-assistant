@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "MJ JARVIS Mobile",
+    "slug": "mj-jarvis-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#030712"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "MJ requires microphone access for voice commands.",
+        "NSCameraUsageDescription": "MJ requires camera access for AI vision analysis."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#030712"
+      },
+      "package": "com.noaman.mjassistant",
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "INTERNET",
+        "MODIFY_AUDIO_SETTINGS",
+        "VIBRATE"
+      ]
+    }
+  }
+}

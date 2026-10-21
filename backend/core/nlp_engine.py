@@ -200,6 +200,32 @@ class FastSemanticNLU:
             return NLPResult(intent="SYSTEM_CONTROL", confidence=0.95, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
 
         # -------------------------------------------------------------
+        # 1.5 IOT SMART HOME & AUTOMATION MACROS
+        # -------------------------------------------------------------
+        if any(w in norm_q for w in ["lockdown", "workstation lockdown", "lockdown mode"]):
+            entities.action = "lockdown"
+            return NLPResult(intent="AUTOMATION_MACRO", confidence=0.98, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+        if any(w in norm_q for w in ["focus mode", "focus on", "padhai mode"]):
+            entities.action = "focus_mode"
+            return NLPResult(intent="AUTOMATION_MACRO", confidence=0.98, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+        if any(w in norm_q for w in ["morning routine", "morning mode", "subah ka routine"]):
+            entities.action = "morning_routine"
+            return NLPResult(intent="AUTOMATION_MACRO", confidence=0.98, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+
+        from backend.tools.iot_controller import iot_controller
+        matched_dev = iot_controller.find_device(norm_q)
+        if matched_dev:
+            act = "toggle"
+            if any(w in norm_q for w in ["on", "chalu", "kholo", "start", "jalao"]):
+                act = "on"
+            elif any(w in norm_q for w in ["off", "band", "bujhao", "roko", "stop"]):
+                act = "off"
+            entities.action = act
+            entities.raw_parameters["device_id"] = matched_dev["id"]
+            entities.raw_parameters["device_name"] = matched_dev["name"]
+            return NLPResult(intent="IOT_CONTROL", confidence=0.98, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+
+        # -------------------------------------------------------------
         # 2. COMMUNICATION (Calling & WhatsApp Messaging)
         # -------------------------------------------------------------
         # Direct Calling: e.g. "Rahul ko call karo", "call Rahul", "dial 9876543210"
@@ -424,11 +450,21 @@ class FastSemanticNLU:
             return NLPResult(intent="AUTONOMOUS_TASK", confidence=0.92, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
 
         # -------------------------------------------------------------
-        # 12. FALLBACK / LOW CONFIDENCE -> DEEP PARSER OR CONVERSATION
+        # 12. CONVERSATIONAL INTENT & FALLBACK (Fast-Tracked to eliminate redundant LLM parsing)
         # -------------------------------------------------------------
+        conversational_tokens = [
+            "kya", "kyun", "kyu", "kyon", "kaise", "kab", "kahan", "kaun", "kiska", "kitna",
+            "what", "why", "how", "when", "where", "who", "which",
+            "tum", "tu", "aap", "mera", "meri", "tere", "teri", "hum", "mujhe", "tujhe",
+            "bolo", "batao", "suno", "baat", "joke", "kahani", "shikayat", "reply", "late", "fast",
+            "kaise ho", "kya haal", "theek", "hello", "hi", "hey"
+        ]
+        is_conversational = any(w in norm_q for w in conversational_tokens)
+        conf = 0.92 if is_conversational else 0.85
+
         return NLPResult(
             intent="CONVERSATION",
-            confidence=0.50,
+            confidence=conf,
             entities=entities,
             sentiment=sentiment,
             sentiment_score=sentiment_score,

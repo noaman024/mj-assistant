@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
    1. THEME ENGINE (Black & White Stealth Luxury + 4 Matching Palettes)
    ========================================================================== */
 function initThemes() {
-  const savedTheme = localStorage.getItem("mj_cockpit_theme") || "monochrome";
+  const savedTheme = localStorage.getItem("mj_cockpit_theme") || "jarvis";
   applyTheme(savedTheme);
 
   document.querySelectorAll("[data-theme-pick]").forEach(btn => {

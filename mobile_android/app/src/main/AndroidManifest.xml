@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Superpower 2: Direct Calling without confirmation screen -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
@@ -18,9 +19,32 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Superpower 4: Bluetooth, Volume & Device Actuation -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- App Queries to discover and launch installed applications (Android 11+) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.android.chrome" />
+        <package android:name="com.spotify.music" />
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.instagram.android" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.google.android.gm" />
+        <package android:name="com.google.android.calculator" />
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -32,7 +56,7 @@
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true">
 
-        <!-- Main Cyberpunk Cockpit Activity -->
+        <!-- Main Cyberpunk Cockpit Activity with Deep Linking -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -42,6 +66,20 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- JARVIS Deep Linking Hook (e.g. mj://command?query=volume_up) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="mj" android:host="command" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mj.assistant" android:pathPrefix="/command" />
             </intent-filter>
         </activity>
 
@@ -73,6 +111,17 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Superpower 5: Autonomous Background Command & Push Automation Hook Receiver -->
+        <receiver
+            android:name=".receivers.MJCommandReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.mj.assistant.EXECUTE_COMMAND" />
+                <action android:name="com.mj.assistant.TRIGGER_WAKE" />
             </intent-filter>
         </receiver>
 

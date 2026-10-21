@@ -136,6 +136,7 @@ async function dispatchCommand(query) {
       const data = await res.json();
       const reply = data.response || "Command executed on Laptop.";
       showAssistantResponse(reply);
+      playPhoneTTS(reply);
       return;
     } catch (e) {
       console.warn("Laptop command failed, falling back to local bridge:", e);
@@ -407,14 +408,73 @@ function stopCameraStream() {
   }
 }
 
-// 9. Voice & Speech Hooks
+// 9. Voice & Speech Hooks (Web Speech API + Android Bridge + Phone TTS Audio)
+let pwaRecognition = null;
+
+function playPhoneTTS(text) {
+  if (!text || !text.trim() || !isLaptopOnline) return;
+  try {
+    const audioUrl = `http://${activeHost}/api/voice/tts?text=${encodeURIComponent(text)}`;
+    const audio = new Audio(audioUrl);
+    audio.play().catch(() => {
+      // Browser autoplay policy fallback
+      if ('speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'hi-IN';
+        window.speechSynthesis.speak(utter);
+      }
+    });
+  } catch (e) {
+    console.warn("TTS audio playback notice:", e);
+  }
+}
+
 function setupVoice() {
   const micBtn = document.getElementById("micBtn");
+
+  // Initialize Web Speech API for PWA / Mobile Browser
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    pwaRecognition = new SpeechRec();
+    pwaRecognition.continuous = false;
+    pwaRecognition.interimResults = false;
+    pwaRecognition.lang = 'en-IN';
+
+    pwaRecognition.onstart = () => {
+      micBtn.classList.add("listening");
+      showAssistantResponse("🎙️ Sun rahi hu Noaman... Boliye");
+    };
+
+    pwaRecognition.onresult = (event) => {
+      micBtn.classList.remove("listening");
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        document.getElementById("chatInput").value = transcript;
+        dispatchCommand(transcript);
+      }
+    };
+
+    pwaRecognition.onerror = (e) => {
+      micBtn.classList.remove("listening");
+      console.warn("PWA voice error:", e);
+    };
+
+    pwaRecognition.onend = () => {
+      micBtn.classList.remove("listening");
+    };
+  }
+
   micBtn.addEventListener("click", () => {
     if (window.AndroidBridge && typeof window.AndroidBridge.startVoiceRecognition === "function") {
       window.AndroidBridge.startVoiceRecognition();
+    } else if (pwaRecognition) {
+      try {
+        pwaRecognition.start();
+      } catch (_) {
+        pwaRecognition.stop();
+      }
     } else {
-      showAssistantResponse("Native voice recognition available inside the Android APK.");
+      showAssistantResponse("Voice input not supported on this browser.");
     }
   });
 

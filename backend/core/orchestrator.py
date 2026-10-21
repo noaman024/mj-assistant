@@ -25,6 +25,8 @@ from backend.agents.deep_research import deep_research
 from backend.agents.react_agent import react_agent
 from backend.tools.code_interpreter import code_interpreter
 from backend.core.fact_extractor import fact_extractor
+from backend.tools.automation_engine import automation_engine
+from backend.tools.iot_controller import iot_controller
 import asyncio
 
 logger = logging.getLogger("MJ.Orchestrator")
@@ -112,9 +114,51 @@ class AssistantOrchestrator:
         elif nlp_res.sentiment == "tired":
             empathy_prefix = "Haan Noaman, thoda rest bhi le lo. "
 
-        # 1. System Controls Intent
+        # 0d. Automation Macro Execution (Multi-step JARVIS Routines)
+        if nlp_res.intent == "AUTOMATION_MACRO":
+            macro_name = nlp_res.entities.action or "lockdown"
+            macro_info = automation_engine.macros.get(macro_name, {})
+            pre_voice = macro_info.get("pre_announce", f"Executing {macro_name} macro {USER_NAME}...")
+            await tts.speak(pre_voice)
+            exec_res = await automation_engine.execute_macro(macro_name)
+            post_voice = exec_res.get("post_confirm", f"Macro {macro_name} complete.")
+            await tts.speak(post_voice)
+            return post_voice
+
+        # 0e. Universal IoT & Smart Home Control Intent
+        if nlp_res.intent == "IOT_CONTROL":
+            dev_id = nlp_res.entities.raw_parameters.get("device_id")
+            dev_name = nlp_res.entities.raw_parameters.get("device_name", dev_id)
+            action = nlp_res.entities.action or "toggle"
+            pre_voice = f"{dev_name} ko {action.upper()} kar rahi hu {USER_NAME}..."
+            await tts.speak(pre_voice)
+            res_dict = await iot_controller.execute_action(dev_id, action)
+            post_voice = res_dict.get("message", "Device state updated.")
+            await tts.speak(post_voice)
+            return post_voice
+
+        # 1. System Controls Intent (with Vocal Feedback Loop)
         if nlp_res.intent == "SYSTEM_CONTROL":
             action = nlp_res.entities.action
+            pre_msg = ""
+            if action == "lock":
+                pre_msg = f"Workstation lock kar rahi hu {USER_NAME}..."
+            elif action == "sleep":
+                pre_msg = f"Workstation sleep mode me daal rahi hu {USER_NAME}..."
+            elif action == "minimize":
+                pre_msg = f"Saari windows minimize kar rahi hu {USER_NAME}..."
+            elif action == "screenshot":
+                pre_msg = f"Screenshot capture le rahi hu {USER_NAME}..."
+            elif action == "volume_up":
+                pre_msg = f"Volume badha rahi hu {USER_NAME}..."
+            elif action == "volume_down":
+                pre_msg = f"Volume kam kar rahi hu {USER_NAME}..."
+            elif action == "mute":
+                pre_msg = f"Audio mute toggle kar rahi hu {USER_NAME}..."
+
+            if pre_msg:
+                await tts.speak(pre_msg)
+
             if action == "volume_up":
                 res = system_control.volume_up()
             elif action == "volume_down":
@@ -138,9 +182,12 @@ class AssistantOrchestrator:
             await tts.speak(final_res)
             return final_res
 
-        # 2. App Launch Intent
+        # 2. App Launch Intent (with Vocal Announcement Loop)
         if nlp_res.intent == "APP_LAUNCH" and nlp_res.entities.app_name:
             target = nlp_res.entities.target_device or source_device
+            app_label = nlp_res.entities.app_name.capitalize()
+            pre_launch_msg = f"{app_label} launch kar rahi hu {USER_NAME}..."
+            await tts.speak(pre_launch_msg)
             res = app_launcher.launch(nlp_res.entities.app_name, target=target)
             final_res = f"{empathy_prefix}{res}" if empathy_prefix else res
             await tts.speak(final_res)

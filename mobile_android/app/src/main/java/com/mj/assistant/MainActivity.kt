@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
@@ -29,28 +30,36 @@ class MainActivity : AppCompatActivity() {
     private var speechRecognizer: SpeechRecognizer? = null
 
     private val PERMISSIONS_REQUEST_CODE = 101
-    private val requiredPermissions = arrayOf(
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.CALL_PHONE,
-        Manifest.permission.CAMERA
-    )
+
+    private val requiredPermissions: Array<String>
+        get() {
+            val list = mutableListOf(
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.CALL_PHONE,
+                Manifest.permission.CAMERA
+            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                list.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                list.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            return list.toTypedArray()
+        }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 1. Request Runtime Permissions
         checkAndRequestPermissions()
-
-        // 2. Start 24/7 Background Listening Service
         startBackgroundService()
 
-        // 3. Initialize WebView Cockpit
         webView = findViewById(R.id.webViewCockpit)
         setupWebView()
 
-        // 4. Handle Hardware Back Button
+        handleIncomingIntent(intent)
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (webView.canGoBack()) {
@@ -60,6 +69,44 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingIntent(intent)
+    }
+
+    private fun handleIncomingIntent(intent: Intent?) {
+        if (intent == null) return
+
+        // 1. Deep Link (e.g. mj://command?query=...)
+        val data: Uri? = intent.data
+        if (data != null && (data.scheme == "mj" || data.scheme == "https")) {
+            val query = data.getQueryParameter("query") ?: data.getQueryParameter("cmd")
+            if (!query.isNullOrEmpty()) {
+                val escaped = escapeJs(query)
+                webView.postDelayed({
+                    evalJs("window.dispatchCommand && window.dispatchCommand('$escaped');")
+                }, 1200)
+                return
+            }
+        }
+
+        // 2. Broadcast / Wake Action
+        if (intent.action == "com.mj.assistant.TRIGGER_WAKE") {
+            webView.postDelayed({
+                startVoiceListening()
+            }, 800)
+        } else if (intent.action == "com.mj.assistant.EXECUTE_COMMAND") {
+            val query = intent.getStringExtra("query")
+            if (!query.isNullOrEmpty()) {
+                val escaped = escapeJs(query)
+                webView.postDelayed({
+                    evalJs("window.dispatchCommand && window.dispatchCommand('$escaped');")
+                }, 1200)
+            }
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -77,7 +124,6 @@ class MainActivity : AppCompatActivity() {
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
-        // Bridge exposure
         bridge = AndroidBridge(this, webView)
         webView.addJavascriptInterface(bridge, "AndroidBridge")
 
@@ -93,7 +139,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Load local Bundled Holographic Cockpit
         webView.loadUrl("file:///android_asset/www/index.html")
     }
 
@@ -129,7 +174,8 @@ class MainActivity : AppCompatActivity() {
 
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             }
 
             speechRecognizer?.setRecognitionListener(object : RecognitionListener {
@@ -138,11 +184,18 @@ class MainActivity : AppCompatActivity() {
                     evalJs("window.onSpeechStatus && window.onSpeechStatus('listening');")
                 }
 
+                override fun onRmsChanged(rmsdB: Float) {
+                    // Normalize -2dB to 10dB into 0 to 100 percentage for UI Visualizer
+                    val normalized = ((rmsdB + 2.0f) / 12.0f * 100.0f).coerceIn(0.0f, 100.0f).toInt()
+                    evalJs("window.onMicAmplitude && window.onMicAmplitude($normalized);")
+                }
+
                 override fun onResults(results: Bundle?) {
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val spoken = matches?.firstOrNull() ?: ""
+                    evalJs("window.onMicAmplitude && window.onMicAmplitude(0);")
                     if (spoken.isNotEmpty()) {
-                        val escaped = spoken.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"").replace("\n", " ")
+                        val escaped = escapeJs(spoken)
                         evalJs("window.onNativeVoiceResult && window.onNativeVoiceResult('$escaped');")
                     } else {
                         evalJs("window.onSpeechStatus && window.onSpeechStatus('idle');")
@@ -150,19 +203,28 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onError(error: Int) {
+                    evalJs("window.onMicAmplitude && window.onMicAmplitude(0);")
                     evalJs("window.onSpeechStatus && window.onSpeechStatus('idle');")
                 }
 
                 override fun onBeginningOfSpeech() {}
-                override fun onRmsChanged(rmsdB: Float) {}
                 override fun onBufferReceived(buffer: ByteArray?) {}
-                override fun onEndOfSpeech() {}
+                override fun onEndOfSpeech() {
+                    evalJs("window.onMicAmplitude && window.onMicAmplitude(0);")
+                }
                 override fun onPartialResults(partialResults: Bundle?) {}
                 override fun onEvent(eventType: Int, params: Bundle?) {}
             })
 
             speechRecognizer?.startListening(intent)
         }
+    }
+
+    private fun escapeJs(str: String): String {
+        return str.replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\"", "\\\"")
+            .replace("\n", " ")
     }
 
     private fun evalJs(script: String) {

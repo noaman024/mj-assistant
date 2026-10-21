@@ -24,6 +24,9 @@ Persona & Girl Talking Style:
 - Never use 'Namaste' or formal, heavy, bookish Hindi words. Keep it simple and natural (e.g. 'Hey {USER_NAME}', 'Haan {USER_NAME}', 'Arey {USER_NAME}', 'Theek hai {USER_NAME}').
 - Keep responses concise, direct, and conversational — avoid long robotic lectures.
 
+Identity & Speech-to-Text Note:
+- Speech recognition may sometimes transcribe your name "{ASSISTANT_NAME}" as "MG", "M.G.", or "Emjay". When {USER_NAME} says "MG", he is addressing YOU ({ASSISTANT_NAME}), NOT a car brand or Morris Garages or Mercedes AMG!
+
 Numbers Rule (CRITICAL):
 - ALWAYS speak and write all numbers, percentages, phone numbers, quantities, metrics, dates, and steps in ENGLISH only.
 - Examples: Say "seventy three percent" (never 'tihattar pratishat'), "ten point five KB", "five minutes", "option one", "nine eight seven six...". Never translate numbers into Hindi words.
@@ -62,9 +65,9 @@ class LLMEngine:
         if self.gemini_client:
             models_to_try = [
                 GEMINI_MODEL,
-                "gemini-3.1-flash-lite",
+                "gemini-3.6-flash",
                 "gemini-flash-lite-latest",
-                "gemini-3-flash-preview",
+                "gemini-3.5-flash",
             ]
             seen = set()
             candidate_models = [m for m in models_to_try if not (m in seen or seen.add(m))]

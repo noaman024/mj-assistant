@@ -1,4 +1,27 @@
 :root,
+html[data-theme="jarvis"] {
+  --bg-deep: #030712;
+  --bg-surface: rgba(8, 15, 30, 0.88);
+  --bg-card: rgba(12, 22, 45, 0.75);
+  --cyan: #00f0ff;
+  --cyan-glow: rgba(0, 240, 255, 0.45);
+  --orange: #ff7700;
+  --orange-glow: rgba(255, 119, 0, 0.50);
+  --magenta: #ff7700;
+  --magenta-glow: rgba(255, 119, 0, 0.40);
+  --purple: #ff8c00;
+  --green: #00f0ff;
+  --text-primary: #f0fdf4;
+  --text-muted: #7dd3fc;
+  --border-glow: 1px solid rgba(0, 240, 255, 0.35);
+  --border-subtle: 1px solid rgba(0, 240, 255, 0.14);
+  --theme-accent-gradient: linear-gradient(135deg, #00f0ff 0%, #ff7700 100%);
+  --theme-glow-radial: radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.12) 0%, transparent 45%);
+  --grid-line: rgba(0, 240, 255, 0.04);
+  --core-gradient: radial-gradient(circle at 35% 35%, #00f0ff 0%, rgba(255, 119, 0, 0.7) 60%, rgba(3, 7, 18, 0.95) 100%);
+  --core-glow: 0 0 35px rgba(0, 240, 255, 0.6), 0 0 70px rgba(255, 119, 0, 0.35), inset 0 0 15px #fff;
+}
+
 html[data-theme="monochrome"] {
   --bg-deep: #060608;
   --bg-surface: rgba(16, 16, 20, 0.90);

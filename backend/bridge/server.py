@@ -56,6 +56,10 @@ async def get_desktop():
 async def get_manifest():
     return FileResponse(WEB_DIR / "manifest.json")
 
+@app.get("/sw.js")
+async def get_service_worker():
+    return FileResponse(WEB_DIR / "sw.js", media_type="application/javascript")
+
 def get_local_ip():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -278,6 +282,138 @@ async def save_durable_fact(req: MemoryFactRequest):
     from backend.core.fact_extractor import fact_extractor
     saved = fact_extractor.save_fact(req.fact)
     return {"status": "success", "saved": saved}
+
+# --- JARVIS Universal IoT Smart Home Endpoints ---
+class IoTControlRequest(BaseModel):
+    device_id: str
+    action: str
+    value: Any = None
+
+class IoTRegisterRequest(BaseModel):
+    id: str
+    name: str
+    protocol: str = "rest"
+    endpoints: Dict[str, str] = {}
+    aliases: List[str] = []
+
+@app.get("/api/iot/devices")
+async def get_iot_devices():
+    """Returns list of all registered smart home IoT devices"""
+    from backend.tools.iot_controller import iot_controller
+    return {"status": "success", "devices": iot_controller.list_devices()}
+
+@app.post("/api/iot/control")
+async def control_iot_device(req: IoTControlRequest):
+    """Controls a smart home device via REST or MQTT"""
+    from backend.tools.iot_controller import iot_controller
+    res = await iot_controller.execute_action(req.device_id, req.action, req.value)
+    return {"status": "success", "result": res}
+
+@app.post("/api/iot/register")
+async def register_iot_device(req: IoTRegisterRequest):
+    """Registers new IoT hardware device"""
+    from backend.tools.iot_controller import iot_controller
+    res = iot_controller.register_device(req.model_dump())
+    return {"status": "success", "result": res}
+
+# --- JARVIS Automation Engine & Macro Endpoints ---
+class MacroRequest(BaseModel):
+    macro_name: str
+
+class PowerShellRequest(BaseModel):
+    script: str
+
+@app.get("/api/automation/macros")
+async def get_macros():
+    """Lists available automation macros"""
+    from backend.tools.automation_engine import automation_engine
+    return {"status": "success", "macros": automation_engine.macros}
+
+@app.post("/api/automation/macro")
+async def run_automation_macro(req: MacroRequest):
+    """Executes a multi-action automation macro"""
+    from backend.tools.automation_engine import automation_engine
+    res = await automation_engine.execute_macro(req.macro_name)
+    return {"status": "success", "result": res}
+
+@app.post("/api/automation/powershell")
+async def run_powershell_script(req: PowerShellRequest):
+    """Runs a system-level PowerShell automation script"""
+    from backend.tools.automation_engine import automation_engine
+    res = automation_engine.execute_powershell(req.script)
+    return {"status": "success", "result": res}
+
+# --- JARVIS Autonomous Task Scheduler Endpoints ---
+class DynamicTaskRequest(BaseModel):
+    task_id: str
+    name: str
+    interval_sec: int
+    command: str
+
+@app.get("/api/scheduler/tasks")
+async def get_scheduled_tasks():
+    """Lists active autonomous background tasks"""
+    from backend.core.proactive_scheduler import proactive_scheduler
+    return {"status": "success", "tasks": proactive_scheduler.list_tasks()}
+
+@app.post("/api/scheduler/task")
+async def add_scheduled_task(req: DynamicTaskRequest):
+    """Schedules a new autonomous background task"""
+    from backend.core.proactive_scheduler import proactive_scheduler
+    from backend.core.orchestrator import orchestrator
+
+    async def task_wrapper():
+        return await orchestrator.process_command(req.command, source_device="scheduler")
+
+    proactive_scheduler.register_task(
+        task_id=req.task_id,
+        name=req.name,
+        interval_sec=req.interval_sec,
+        handler=task_wrapper,
+        vocal_announce=True
+    )
+    return {"status": "success", "message": f"Task '{req.name}' scheduled every {req.interval_sec}s."}
+
+@app.delete("/api/scheduler/task/{task_id}")
+async def delete_scheduled_task(task_id: str):
+    """Deletes an autonomous background task"""
+    from backend.core.proactive_scheduler import proactive_scheduler
+    success = proactive_scheduler.unregister_task(task_id)
+    return {"status": "success" if success else "error", "removed": success}
+
+# --- Mobile Two-Way Audio Streaming (Edge-TTS over HTTP/WS) ---
+class TTSStreamRequest(BaseModel):
+    text: str
+
+@app.post("/api/voice/tts")
+async def stream_tts_audio(req: TTSStreamRequest):
+    """Synthesizes speech and streams MP3 audio directly to phone browser for two-way audio"""
+    import tempfile, edge_tts
+    from backend.config.settings import TTS_VOICE, TTS_RATE, TTS_PITCH
+    from backend.voice.hinglish_normalizer import normalize_hinglish
+
+    spoken = normalize_hinglish(req.text)
+    communicate = edge_tts.Communicate(text=spoken, voice=TTS_VOICE, rate=TTS_RATE, pitch=TTS_PITCH)
+    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as fp:
+        tmp_path = fp.name
+    await communicate.save(tmp_path)
+    return FileResponse(tmp_path, media_type="audio/mpeg")
+
+@app.get("/api/voice/tts")
+async def get_stream_tts_audio(text: str = ""):
+    """GET version for direct HTML5 Audio(src) on mobile browsers"""
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Text query parameter is required")
+    import tempfile, edge_tts
+    from backend.config.settings import TTS_VOICE, TTS_RATE, TTS_PITCH
+    from backend.voice.hinglish_normalizer import normalize_hinglish
+
+    spoken = normalize_hinglish(text)
+    communicate = edge_tts.Communicate(text=spoken, voice=TTS_VOICE, rate=TTS_RATE, pitch=TTS_PITCH)
+    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as fp:
+        tmp_path = fp.name
+    await communicate.save(tmp_path)
+    return FileResponse(tmp_path, media_type="audio/mpeg")
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

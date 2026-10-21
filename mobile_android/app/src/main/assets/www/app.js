@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCamera();
   setupVoice();
   setupCallsAndWhatsApp();
+  initMobileVisualizer();
 
   // Initial connection ping
   checkConnection();
@@ -136,6 +137,7 @@ async function dispatchCommand(query) {
       const data = await res.json();
       const reply = data.response || "Command executed on Laptop.";
       showAssistantResponse(reply);
+      playMobileTTS(reply);
       return;
     } catch (e) {
       console.warn("Laptop command failed, falling back to local bridge:", e);
@@ -407,34 +409,153 @@ function stopCameraStream() {
   }
 }
 
-// 9. Voice & Speech Hooks
+// 9. Voice, Speech & JARVIS Reactive Visualizer Engine
+let currentAmplitude = 0;
+let visualizerAnimationId = null;
+
+function playMobileTTS(text) {
+  if (!text || !text.trim() || !isLaptopOnline) return;
+  const audioUrl = `http://${activeHost}/api/voice/tts?text=${encodeURIComponent(text)}`;
+
+  if (window.AndroidBridge && typeof window.AndroidBridge.playTTSAudio === "function") {
+    // Native MediaPlayer with Media Ducking!
+    setCoreActive(true);
+    window.AndroidBridge.playTTSAudio(audioUrl);
+  } else {
+    // Web Audio fallback
+    try {
+      const audio = new Audio(audioUrl);
+      setCoreActive(true);
+      audio.onended = () => setCoreActive(false);
+      audio.onerror = () => setCoreActive(false);
+      audio.play().catch(() => setCoreActive(false));
+    } catch (_) {
+      setCoreActive(false);
+    }
+  }
+}
+
+function setCoreActive(isActive) {
+  const core = document.getElementById("btnCoreVoice");
+  const label = document.getElementById("hudVoiceLabel");
+  if (core) {
+    if (isActive) core.classList.add("active-pulse");
+    else core.classList.remove("active-pulse");
+  }
+  if (label) {
+    label.innerText = isActive ? "MJ SPEAKING / ACTIVE" : "JARVIS CORE ONLINE";
+  }
+}
+
+function initMobileVisualizer() {
+  const canvas = document.getElementById("mobileVisualizerCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  let phase = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const w = canvas.width;
+    const h = canvas.height;
+    const midY = h / 2;
+
+    // Draw baseline
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(0, 240, 255, 0.15)";
+    ctx.lineWidth = 1;
+    ctx.moveTo(0, midY);
+    ctx.lineTo(w, midY);
+    ctx.stroke();
+
+    // Responsive sine waveform based on currentAmplitude (0-100)
+    const amp = Math.max(currentAmplitude * 0.35, 3.0);
+
+    // Cyan Harmonic Wave
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = currentAmplitude > 20 ? "#ff7700" : "#00f0ff";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = currentAmplitude > 20 ? "#ff7700" : "#00f0ff";
+
+    for (let x = 0; x < w; x++) {
+      const normX = x / w;
+      const envelope = Math.sin(normX * Math.PI); // Pin edges to zero
+      const y = midY + Math.sin(normX * 10 + phase) * amp * envelope;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    phase += 0.08 + (currentAmplitude * 0.002);
+    visualizerAnimationId = requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
 function setupVoice() {
   const micBtn = document.getElementById("micBtn");
-  micBtn.addEventListener("click", () => {
+  const btnCoreVoice = document.getElementById("btnCoreVoice");
+
+  const triggerListening = () => {
     if (window.AndroidBridge && typeof window.AndroidBridge.startVoiceRecognition === "function") {
       window.AndroidBridge.startVoiceRecognition();
     } else {
       showAssistantResponse("Native voice recognition available inside the Android APK.");
     }
-  });
+  };
+
+  micBtn.addEventListener("click", triggerListening);
+  if (btnCoreVoice) {
+    btnCoreVoice.addEventListener("click", triggerListening);
+  }
 
   // Global callbacks called by MainActivity.kt
   window.onSpeechStatus = function(status) {
     const mic = document.getElementById("micBtn");
+    const core = document.getElementById("btnCoreVoice");
+    const label = document.getElementById("hudVoiceLabel");
+
     if (status === "listening") {
       mic.classList.add("listening");
+      if (core) core.classList.add("active-pulse");
+      if (label) label.innerText = "LISTENING...";
       showAssistantResponse("🎙️ Sun rahi hu Noaman... Boliye");
     } else {
       mic.classList.remove("listening");
+      if (core) core.classList.remove("active-pulse");
+      if (label) label.innerText = "JARVIS CORE ONLINE";
+      currentAmplitude = 0;
     }
+  };
+
+  window.onMicAmplitude = function(percent) {
+    currentAmplitude = percent;
   };
 
   window.onNativeVoiceResult = function(spokenText) {
     const mic = document.getElementById("micBtn");
+    const core = document.getElementById("btnCoreVoice");
     mic.classList.remove("listening");
+    if (core) core.classList.remove("active-pulse");
+    currentAmplitude = 0;
+
     if (spokenText) {
       document.getElementById("chatInput").value = spokenText;
       dispatchCommand(spokenText);
+    }
+  };
+
+  window.onAudioStreamFinished = function() {
+    setCoreActive(false);
+  };
+
+  window.dispatchDeepLinkCommand = function(cmd) {
+    if (cmd) {
+      document.getElementById("chatInput").value = cmd;
+      dispatchCommand(cmd);
     }
   };
 }

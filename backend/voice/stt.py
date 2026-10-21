@@ -24,7 +24,7 @@ class SpeechToText:
         self.recognizer = sr.Recognizer()
         self.sample_rate = SAMPLE_RATE
         self.silence_threshold = 120  # Sensitive AC RMS threshold
-        self.silence_limit = 0.9      # Seconds of silence to conclude speech
+        self.silence_limit = 0.55     # Seconds of silence to conclude speech (optimized for fast conversational response)
 
     def calibrate_noise(self, duration: float = 0.5):
         """Calibrates microphone for ambient room noise with AC zero-mean filtering"""
