@@ -202,16 +202,23 @@ class FastSemanticNLU:
         # -------------------------------------------------------------
         # 2. COMMUNICATION (Calling & WhatsApp Messaging)
         # -------------------------------------------------------------
-        # Direct Calling: e.g. "Rahul ko call karo", "call Papa", "dial 9876543210"
-        call_match = re.search(r"(?:call|dial|phone lagao|call lagao|call karo)\s*(?:to|pe|par)?\s*([a-zA-Z0-9\+\s]+)", norm_q, re.IGNORECASE)
-        if call_match and not any(w in norm_q for w in ["whatsapp", "screen", "summary"]):
-            target = call_match.group(1).strip()
-            # Clean target
-            target = re.sub(r"\b(ko|pe|par|karo|lagao|please|zara)\b", "", target).strip()
+        # Direct Calling: e.g. "Rahul ko call karo", "call Rahul", "dial 9876543210"
+        if not any(w in norm_q for w in ["whatsapp", "screen", "summary"]):
+            target = None
+            call_match_sov = re.search(r"([a-zA-Z0-9\+\s]+?)\s+ko\s+(?:call|phone|dial)", norm_q, re.IGNORECASE)
+            call_match_svo = re.search(r"(?:call|dial|phone lagao|call lagao|call karo)\s*(?:to|pe|par)?\s*([a-zA-Z0-9\+\s]+)", norm_q, re.IGNORECASE)
+
+            if call_match_sov:
+                target = call_match_sov.group(1).strip()
+            elif call_match_svo:
+                target = call_match_svo.group(1).strip()
+
             if target:
-                entities.contact_name = target
-                entities.action = "call"
-                return NLPResult(intent="COMMUNICATION", confidence=0.95, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
+                target = re.sub(r"\b(ko|pe|par|karo|lagao|please|zara|call|phone|dial)\b", "", target, flags=re.IGNORECASE).strip()
+                if target:
+                    entities.contact_name = target
+                    entities.action = "call"
+                    return NLPResult(intent="COMMUNICATION", confidence=0.96, entities=entities, sentiment=sentiment, sentiment_score=sentiment_score, normalized_query=norm_q)
 
         # WhatsApp Message Intent: e.g. "Rahul ko WhatsApp par bolo ki 5 min me aa raha hu"
         msg_match = re.search(r"([a-zA-Z\s]+?)\s+ko\s+(?:whatsapp\s+(?:par|pe)?\s*)?(?:message|msg|bolo)\s*(?:karo|ki|bhejo)?\s*[:,-]?\s*(.+)", norm_q, re.IGNORECASE)
