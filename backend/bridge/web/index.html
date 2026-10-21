@@ -474,9 +474,15 @@
           Status: Ready to connect
         </div>
 
-        <div class="modal-actions">
-          <button class="btn-primary" id="btnSaveIp">Save & Connect</button>
-          <button class="btn-ctrl" id="btnTestPing">Test Ping</button>
+        <div class="modal-actions" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; gap:8px;">
+            <button class="btn-primary" id="btnSaveIp" style="flex:1;">Save & Connect</button>
+            <button class="btn-ctrl" id="btnTestPing" style="flex:1;">Test Ping</button>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-ctrl" id="btnSyncReload" style="flex:1; border-color:var(--cyan); color:var(--cyan);">🔄 Reload UI</button>
+            <button class="btn-ctrl" id="btnLiveServer" style="flex:1; border-color:var(--pink); color:var(--pink);">🌐 Live Hot-Sync</button>
+          </div>
         </div>
       </div>
     </div>

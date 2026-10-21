@@ -798,4 +798,28 @@ function setupSettingsModal() {
       statusBox.innerText = `❌ Unreachable (${Date.now() - start}ms). Ensure Laptop server is running on port 8000.`;
     }
   });
+
+  const btnReload = document.getElementById("btnSyncReload");
+  if (btnReload) {
+    btnReload.addEventListener("click", () => {
+      statusBox.innerText = "🔄 Reloading interface...";
+      if (window.AndroidBridge && typeof window.AndroidBridge.reloadInterface === "function") {
+        window.AndroidBridge.reloadInterface();
+      } else {
+        window.location.reload();
+      }
+    });
+  }
+
+  const btnLive = document.getElementById("btnLiveServer");
+  if (btnLive) {
+    btnLive.addEventListener("click", () => {
+      statusBox.innerText = `🌐 Connecting to live server at http://${activeHost}/...`;
+      if (window.AndroidBridge && typeof window.AndroidBridge.loadLiveServer === "function") {
+        window.AndroidBridge.loadLiveServer();
+      } else {
+        window.location.href = `http://${activeHost}/`;
+      }
+    });
+  }
 }

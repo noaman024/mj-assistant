@@ -39,6 +39,28 @@ class AndroidBridge(
     }
 
     @JavascriptInterface
+    fun reloadInterface() {
+        activity.runOnUiThread {
+            webView.reload()
+        }
+    }
+
+    @JavascriptInterface
+    fun loadLiveServer() {
+        val host = getLaptopIp()
+        activity.runOnUiThread {
+            webView.loadUrl("http://$host/")
+        }
+    }
+
+    @JavascriptInterface
+    fun loadOfflineAsset() {
+        activity.runOnUiThread {
+            webView.loadUrl("file:///android_asset/www/index.html")
+        }
+    }
+
+    @JavascriptInterface
     fun makeCall(phoneNumber: String): Boolean {
         vibrate(50)
         return callManager.callNumber(phoneNumber)
