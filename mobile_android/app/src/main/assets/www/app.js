@@ -34,36 +34,64 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(checkConnection, 3000);
 });
 
-// 2. Tab Navigation
+// 2. Tab Navigation & Dual Mode Switching
 function setupTabs() {
   const tabs = document.querySelectorAll(".tab-btn");
+  const btnModePhone = document.getElementById("btnModePhone");
+  const btnModePc = document.getElementById("btnModePc");
+
+  function switchTab(targetId) {
+    tabs.forEach((t) => {
+      if (t.getAttribute("data-tab") === targetId) t.classList.add("active");
+      else t.classList.remove("active");
+    });
+
+    currentTab = targetId;
+    document.querySelectorAll(".tab-pane").forEach((pane) => {
+      pane.classList.remove("active");
+    });
+    const targetPane = document.getElementById(targetId);
+    if (targetPane) targetPane.classList.add("active");
+
+    // Dual Mode pill sync
+    if (targetId === "tab-pc") {
+      if (btnModePc) btnModePc.classList.add("active");
+      if (btnModePhone) btnModePhone.classList.remove("active");
+      document.querySelectorAll(".pc-only").forEach(el => el.style.display = "flex");
+    } else {
+      if (btnModePhone) btnModePhone.classList.add("active");
+      if (btnModePc) btnModePc.classList.remove("active");
+      document.querySelectorAll(".pc-only").forEach(el => el.style.display = "none");
+    }
+
+    // Camera & Screen Streaming
+    if (targetId === "tab-pc") {
+      startScreenStream();
+    } else {
+      stopScreenStream();
+    }
+
+    if (targetId === "tab-camera") {
+      initCameraStream();
+    } else {
+      stopCameraStream();
+    }
+  }
+
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-
       const targetId = tab.getAttribute("data-tab");
-      currentTab = targetId;
-      document.querySelectorAll(".tab-pane").forEach((pane) => {
-        pane.classList.remove("active");
-      });
-      const targetPane = document.getElementById(targetId);
-      if (targetPane) targetPane.classList.add("active");
-
-      // Manage camera & screen streaming based on active tab
-      if (targetId === "tab-screen") {
-        startScreenStream();
-      } else {
-        stopScreenStream();
-      }
-
-      if (targetId === "tab-camera") {
-        initCameraStream();
-      } else {
-        stopCameraStream();
-      }
+      switchTab(targetId);
     });
   });
+
+  // Dual Mode Pill buttons in Header
+  if (btnModePhone) {
+    btnModePhone.addEventListener("click", () => switchTab("tab-phone"));
+  }
+  if (btnModePc) {
+    btnModePc.addEventListener("click", () => switchTab("tab-pc"));
+  }
 }
 
 // 3. Connection & Telemetry
@@ -95,6 +123,8 @@ async function checkConnection() {
       isLaptopOnline = true;
       statusDot.className = "status-dot online";
       statusText.innerText = "Online";
+      const lapSync = document.getElementById("valLaptopStatus");
+      if (lapSync) lapSync.innerText = "Online";
 
       // Update telemetry
       if (data.cpu !== undefined) document.getElementById("valCpu").innerText = `${data.cpu}%`;
@@ -109,6 +139,8 @@ async function checkConnection() {
   isLaptopOnline = false;
   statusDot.className = "status-dot standalone";
   statusText.innerText = "Phone Mode";
+  const lapSync = document.getElementById("valLaptopStatus");
+  if (lapSync) lapSync.innerText = "Offline";
   document.getElementById("valCpu").innerText = "--%";
   document.getElementById("valRam").innerText = "--%";
   document.getElementById("valBatt").innerText = "--%";
@@ -180,7 +212,141 @@ function showAssistantResponse(text) {
 
 // 5. Controls Setup
 function setupControls() {
-  // Remote Buttons
+  // --- Phone Device Superpowers (Tab Phone) ---
+  const btnPhoneTorch = document.getElementById("btnPhoneTorchAction");
+  if (btnPhoneTorch) {
+    btnPhoneTorch.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.toggleTorch === "function") {
+        isTorchActive = !isTorchActive;
+        window.AndroidBridge.toggleTorch(isTorchActive);
+        const lbl = document.getElementById("torchLabel");
+        if (lbl) lbl.innerText = isTorchActive ? "Torch On" : "Torch Off";
+        if (isTorchActive) btnPhoneTorch.classList.add("torch-on");
+        else btnPhoneTorch.classList.remove("torch-on");
+        const reply = isTorchActive ? "Flashlight on kar di hai Noaman!" : "Flashlight off kar di hai.";
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  const btnPhoneVolUp = document.getElementById("btnPhoneVolUpAction");
+  if (btnPhoneVolUp) {
+    btnPhoneVolUp.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.volumeUp === "function") {
+        const v = window.AndroidBridge.volumeUp();
+        const reply = `Media volume ${v} percent kar diya hai Noaman.`;
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  const btnPhoneVolDown = document.getElementById("btnPhoneVolDownAction");
+  if (btnPhoneVolDown) {
+    btnPhoneVolDown.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.volumeDown === "function") {
+        const v = window.AndroidBridge.volumeDown();
+        const reply = `Media volume ${v} percent kar diya hai Noaman.`;
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  const btnPhoneMute = document.getElementById("btnPhoneMuteAction");
+  if (btnPhoneMute) {
+    btnPhoneMute.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.mute === "function") {
+        window.AndroidBridge.mute();
+        const reply = "Phone silent mode me set kar diya hai Noaman.";
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  const btnPhoneWifi = document.getElementById("btnPhoneWifiAction");
+  if (btnPhoneWifi) {
+    btnPhoneWifi.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.openWifiSettings === "function") {
+        window.AndroidBridge.openWifiSettings();
+        const reply = "Wi-Fi settings open kar di hain Noaman.";
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  const btnPhoneBluetooth = document.getElementById("btnPhoneBluetoothAction");
+  if (btnPhoneBluetooth) {
+    btnPhoneBluetooth.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.openBluetoothSettings === "function") {
+        window.AndroidBridge.openBluetoothSettings();
+        const reply = "Bluetooth settings open kar di hain Noaman.";
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  const btnPhoneCamera = document.getElementById("btnPhoneCameraAction");
+  if (btnPhoneCamera) {
+    btnPhoneCamera.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.launchApp === "function") {
+        window.AndroidBridge.launchApp("camera");
+        const reply = "Camera open kar rahi hu Noaman!";
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  const btnPhoneBattery = document.getElementById("btnPhoneBatteryAction");
+  if (btnPhoneBattery) {
+    btnPhoneBattery.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof window.AndroidBridge.getBatteryLevel === "function") {
+        const b = window.AndroidBridge.getBatteryLevel();
+        const reply = `Phone battery level ${b} percent hai Noaman.`;
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      }
+    });
+  }
+
+  // --- Phone Quick Apps Launcher ---
+  document.querySelectorAll(".app-tile[data-phone-app]").forEach((tile) => {
+    tile.addEventListener("click", () => {
+      const app = tile.getAttribute("data-phone-app");
+      if (window.AndroidBridge && typeof window.AndroidBridge.launchApp === "function") {
+        window.AndroidBridge.launchApp(app);
+        const reply = `${app.toUpperCase()} open kar rahi hu Noaman!`;
+        showAssistantResponse(reply);
+        speakResponse(reply);
+      } else {
+        dispatchCommand(`${app} open karo`);
+      }
+    });
+  });
+
+  const btnQuickDialer = document.getElementById("btnQuickDialer");
+  if (btnQuickDialer) {
+    btnQuickDialer.addEventListener("click", () => {
+      const callsTab = document.getElementById("tabCallsBtn");
+      if (callsTab) callsTab.click();
+    });
+  }
+
+  // --- Voice Prompt Suggestions Chips ---
+  document.querySelectorAll(".prompt-chip[data-query]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const q = chip.getAttribute("data-query");
+      document.getElementById("chatInput").value = q;
+      dispatchCommand(q);
+    });
+  });
+
+  // --- PC Remote Buttons (Tab PC) ---
   document.querySelectorAll(".btn-ctrl[data-action]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const action = btn.getAttribute("data-action");
@@ -188,7 +354,7 @@ function setupControls() {
     });
   });
 
-  // App Launcher Tiles
+  // PC App Launcher Tiles
   document.querySelectorAll(".app-tile[data-app]").forEach((tile) => {
     tile.addEventListener("click", () => {
       const app = tile.getAttribute("data-app");

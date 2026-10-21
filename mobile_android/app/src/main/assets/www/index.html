@@ -15,6 +15,11 @@
       <div class="header-title">Noaman's Hub</div>
     </div>
     <div class="header-right">
+      <!-- Dual Mode Switcher -->
+      <div class="mode-switch-pill" id="modeSwitchPill" title="Switch between Phone Hub and PC Remote">
+        <button class="mode-btn active" id="btnModePhone">📱 Phone</button>
+        <button class="mode-btn" id="btnModePc">💻 PC</button>
+      </div>
       <div class="connection-status" id="statusBadge" title="Tap to configure connection">
         <div class="status-dot" id="statusDot"></div>
         <span id="statusText">Connecting</span>
@@ -24,32 +29,45 @@
   </header>
 
   <!-- Telemetry Bar -->
-  <div class="telemetry-bar">
-    <div class="tele-pill">
+  <div class="telemetry-bar" id="telemetryBar">
+    <div class="tele-pill" id="pillPhoneBatt">
+      <span class="label">Phone Batt</span>
+      <span class="val" id="valPhoneBatt">--%</span>
+    </div>
+    <div class="tele-pill" id="pillPhoneState">
+      <span class="label">Device State</span>
+      <span class="val" id="valPhoneState">Ready</span>
+    </div>
+    <div class="tele-pill" id="pillWakeWord">
+      <span class="label">Wake Word</span>
+      <span class="val" id="valWakeWord">16kHz On</span>
+    </div>
+    <div class="tele-pill" id="pillLaptopStatus">
+      <span class="label">Laptop Sync</span>
+      <span class="val" id="valLaptopStatus">Offline</span>
+    </div>
+    <!-- PC Metrics (visible in PC Mode) -->
+    <div class="tele-pill pc-only" id="pillCpu" style="display:none;">
       <span class="label">Laptop CPU</span>
       <span class="val" id="valCpu">--%</span>
     </div>
-    <div class="tele-pill">
+    <div class="tele-pill pc-only" id="pillRam" style="display:none;">
       <span class="label">Laptop RAM</span>
       <span class="val" id="valRam">--%</span>
     </div>
-    <div class="tele-pill">
+    <div class="tele-pill pc-only" id="pillBatt" style="display:none;">
       <span class="label">Laptop Batt</span>
       <span class="val" id="valBatt">--%</span>
-    </div>
-    <div class="tele-pill">
-      <span class="label">Phone Batt</span>
-      <span class="val" id="valPhoneBatt">--%</span>
     </div>
   </div>
 
   <!-- Navigation Tabs -->
   <nav class="tabs-nav">
-    <button class="tab-btn active" data-tab="tab-remote" id="tabRemoteBtn">🎮 Remote</button>
-    <button class="tab-btn" data-tab="tab-screen" id="tabScreenBtn">🖥️ Screen</button>
+    <button class="tab-btn active" data-tab="tab-phone" id="tabPhoneBtn">📱 Phone</button>
+    <button class="tab-btn" data-tab="tab-pc" id="tabPcBtn">💻 PC Remote</button>
     <button class="tab-btn" data-tab="tab-camera" id="tabCameraBtn">👁️ AI Eye</button>
-    <button class="tab-btn" data-tab="tab-tools" id="tabToolsBtn">⚡ Tools</button>
     <button class="tab-btn" data-tab="tab-calls" id="tabCallsBtn">📞 Calls</button>
+    <button class="tab-btn" data-tab="tab-tools" id="tabToolsBtn">⚡ Tools</button>
   </nav>
 
   <!-- Main Content Panes -->
@@ -70,23 +88,138 @@
       </div>
     </div>
 
-    <!-- TAB 1: REMOTE CONTROLS -->
-    <section class="tab-pane active" id="tab-remote">
-      <!-- System Controls -->
+    <!-- TAB 1: PHONE HUB (DEFAULT PHONE-FIRST DASHBOARD) -->
+    <section class="tab-pane active" id="tab-phone">
+      <!-- Phone Hardware Controls -->
       <div class="card">
-        <div class="card-title">System Controls</div>
+        <div class="card-title">
+          <span>Phone Device Controls</span>
+          <span class="badge-accent">📱 NATIVE</span>
+        </div>
         <div class="control-grid">
-          <button class="btn-ctrl" data-action="volume badhao" id="btnVolUp">
+          <button class="btn-ctrl" id="btnPhoneTorchAction">
+            <span class="icon">🔦</span>
+            <span id="torchLabel">Torch</span>
+          </button>
+          <button class="btn-ctrl" id="btnPhoneVolUpAction">
             <span class="icon">🔊</span>
             <span>Vol Up</span>
           </button>
-          <button class="btn-ctrl" data-action="volume kam karo" id="btnVolDown">
+          <button class="btn-ctrl" id="btnPhoneVolDownAction">
             <span class="icon">🔉</span>
             <span>Vol Down</span>
           </button>
+          <button class="btn-ctrl" id="btnPhoneMuteAction">
+            <span class="icon">🔕</span>
+            <span>Silent</span>
+          </button>
+          <button class="btn-ctrl" id="btnPhoneWifiAction">
+            <span class="icon">📶</span>
+            <span>Wi-Fi</span>
+          </button>
+          <button class="btn-ctrl" id="btnPhoneBluetoothAction">
+            <span class="icon">ᛒ</span>
+            <span>Bluetooth</span>
+          </button>
+          <button class="btn-ctrl" id="btnPhoneCameraAction">
+            <span class="icon">📷</span>
+            <span>Camera</span>
+          </button>
+          <button class="btn-ctrl" id="btnPhoneBatteryAction">
+            <span class="icon">🔋</span>
+            <span>Battery</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Phone Apps Launcher -->
+      <div class="card">
+        <div class="card-title">
+          <span>Launch Phone Apps</span>
+          <span class="badge-accent">⚡ MOBILE</span>
+        </div>
+        <div class="apps-grid">
+          <button class="app-tile" data-phone-app="youtube">
+            <span class="icon">🔴</span>
+            <span>YouTube</span>
+          </button>
+          <button class="app-tile" data-phone-app="whatsapp">
+            <span class="icon">💬</span>
+            <span>WhatsApp</span>
+          </button>
+          <button class="app-tile" data-phone-app="chrome">
+            <span class="icon">🌐</span>
+            <span>Chrome</span>
+          </button>
+          <button class="app-tile" data-phone-app="spotify">
+            <span class="icon">🎵</span>
+            <span>Spotify</span>
+          </button>
+          <button class="app-tile" data-phone-app="camera">
+            <span class="icon">📸</span>
+            <span>Camera</span>
+          </button>
+          <button class="app-tile" data-phone-app="maps">
+            <span class="icon">🧭</span>
+            <span>Maps</span>
+          </button>
+          <button class="app-tile" data-phone-app="settings">
+            <span class="icon">⚙️</span>
+            <span>Settings</span>
+          </button>
+          <button class="app-tile" data-phone-app="calculator">
+            <span class="icon">🔢</span>
+            <span>Calculator</span>
+          </button>
+          <button class="app-tile" data-phone-app="files">
+            <span class="icon">📁</span>
+            <span>Files</span>
+          </button>
+          <button class="app-tile" id="btnQuickDialer">
+            <span class="icon">📞</span>
+            <span>Dialer</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Voice Prompt Chips -->
+      <div class="card">
+        <div class="card-title">
+          <span>Voice Commands (Tap to Execute)</span>
+        </div>
+        <div class="prompt-chips-grid">
+          <button class="prompt-chip" data-query="YouTube open karo">🔴 YouTube open karo</button>
+          <button class="prompt-chip" data-query="Torch on karo">🔦 Torch on karo</button>
+          <button class="prompt-chip" data-query="Torch off karo">🌑 Torch off karo</button>
+          <button class="prompt-chip" data-query="Phone volume badhao">🔊 Volume badhao</button>
+          <button class="prompt-chip" data-query="Phone silent karo">🔕 Phone silent karo</button>
+          <button class="prompt-chip" data-query="WhatsApp kholo">💬 WhatsApp kholo</button>
+          <button class="prompt-chip" data-query="Battery kitni hai">🔋 Battery check karo</button>
+          <button class="prompt-chip" data-query="Bluetooth settings kholo">ᛒ Bluetooth settings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: PC REMOTE CONTROLS -->
+    <section class="tab-pane" id="tab-pc">
+      <!-- Laptop System Controls -->
+      <div class="card">
+        <div class="card-title">
+          <span>Laptop System Controls</span>
+          <span class="badge-accent">💻 PC</span>
+        </div>
+        <div class="control-grid">
+          <button class="btn-ctrl" data-action="volume badhao" id="btnVolUp">
+            <span class="icon">🔊</span>
+            <span>PC Vol Up</span>
+          </button>
+          <button class="btn-ctrl" data-action="volume kam karo" id="btnVolDown">
+            <span class="icon">🔉</span>
+            <span>PC Vol Down</span>
+          </button>
           <button class="btn-ctrl" data-action="mute karo" id="btnMute">
             <span class="icon">🔇</span>
-            <span>Mute</span>
+            <span>PC Mute</span>
           </button>
           <button class="btn-ctrl" data-action="minimize all" id="btnMinimize">
             <span class="icon">🗗</span>
@@ -103,33 +236,23 @@
         </div>
       </div>
 
-      <!-- Storage & Memory Optimizer -->
+      <!-- Live Screen Mirror -->
       <div class="card">
         <div class="card-title">
-          <span>Storage & Memory Optimizer</span>
-          <span class="badge-accent">📦 VAULT</span>
+          <span>Live Laptop Screen Mirror</span>
+          <span class="badge-accent" id="screenBadge">● LIVE</span>
         </div>
-        <div class="control-grid" style="grid-template-columns: repeat(2, 1fr);">
-          <button class="btn-ctrl" data-action="data zip karo" id="btnZipData">
-            <span class="icon">📦</span>
-            <span>Zip Data Vault</span>
-          </button>
-          <button class="btn-ctrl" data-action="zip check karo" id="btnZipCheck">
-            <span class="icon">🔍</span>
-            <span>Inspect Zip</span>
-          </button>
-          <button class="btn-ctrl" data-action="zip open karo" id="btnZipOpen">
-            <span class="icon">📂</span>
-            <span>Extract Zip</span>
-          </button>
-          <button class="btn-ctrl" data-action="less memory optimize karo" id="btnOptimizeMem">
-            <span class="icon">⚡</span>
-            <span>Optimize RAM</span>
-          </button>
+        <div class="screen-wrapper">
+          <img id="screenImage" src="" alt="Connecting to Laptop Screen Stream...">
+          <div class="screen-overlay-btn" id="btnRefreshScreen">🔄 Refresh</div>
+        </div>
+        <div class="btn-row" style="margin-top:12px;">
+          <button class="btn-primary" id="btnSnapScreen" style="flex:1;">📸 Capture Screen</button>
+          <button class="btn-ctrl" id="btnToggleScreenStream" style="flex:1;">⏸️ Pause Stream</button>
         </div>
       </div>
 
-      <!-- Quick App Launcher Grid -->
+      <!-- Launch Apps on Laptop -->
       <div class="card">
         <div class="card-title">Launch Apps on Laptop</div>
         <div class="apps-grid">
@@ -167,22 +290,30 @@
           </button>
         </div>
       </div>
-    </section>
 
-    <!-- TAB 2: LIVE SCREEN MIRROR -->
-    <section class="tab-pane" id="tab-screen">
+      <!-- Storage & Memory Optimizer -->
       <div class="card">
         <div class="card-title">
-          <span>Live Laptop Screen Mirror</span>
-          <span class="badge-accent" id="screenBadge">● LIVE</span>
+          <span>Storage & Memory Optimizer</span>
+          <span class="badge-accent">📦 VAULT</span>
         </div>
-        <div class="screen-wrapper">
-          <img id="screenImage" src="" alt="Connecting to Laptop Screen Stream...">
-          <div class="screen-overlay-btn" id="btnRefreshScreen">🔄 Refresh</div>
-        </div>
-        <div class="btn-row" style="margin-top:12px;">
-          <button class="btn-primary" id="btnSnapScreen" style="flex:1;">📸 Capture Screen</button>
-          <button class="btn-ctrl" id="btnToggleScreenStream" style="flex:1;">⏸️ Pause Stream</button>
+        <div class="control-grid" style="grid-template-columns: repeat(2, 1fr);">
+          <button class="btn-ctrl" data-action="data zip karo" id="btnZipData">
+            <span class="icon">📦</span>
+            <span>Zip Data Vault</span>
+          </button>
+          <button class="btn-ctrl" data-action="zip check karo" id="btnZipCheck">
+            <span class="icon">🔍</span>
+            <span>Inspect Zip</span>
+          </button>
+          <button class="btn-ctrl" data-action="zip open karo" id="btnZipOpen">
+            <span class="icon">📂</span>
+            <span>Extract Zip</span>
+          </button>
+          <button class="btn-ctrl" data-action="less memory optimize karo" id="btnOptimizeMem">
+            <span class="icon">⚡</span>
+            <span>Optimize RAM</span>
+          </button>
         </div>
       </div>
     </section>

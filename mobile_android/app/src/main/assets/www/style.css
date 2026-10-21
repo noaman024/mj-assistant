@@ -786,3 +786,66 @@ main {
   0%, 100% { opacity: 0.3; transform: scale(0.9); }
   50% { opacity: 1; transform: scale(1.2); }
 }
+
+/* Dual Mode Switch Pill in Header */
+.mode-switch-pill {
+  display: flex;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 20px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, var(--cyan), #0077ff);
+  color: #000;
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+/* Voice Suggestions Prompt Chips */
+.prompt-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.prompt-chip {
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.22);
+  color: var(--cyan);
+  padding: 7px 12px;
+  border-radius: 18px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prompt-chip:active {
+  background: var(--cyan);
+  color: #000;
+  transform: scale(0.96);
+}
+
+/* Flashlight active state */
+.btn-ctrl.torch-on {
+  background: rgba(255, 170, 0, 0.22) !important;
+  border-color: #ffaa00 !important;
+  color: #ffaa00 !important;
+  box-shadow: 0 0 14px rgba(255, 170, 0, 0.45) !important;
+}
