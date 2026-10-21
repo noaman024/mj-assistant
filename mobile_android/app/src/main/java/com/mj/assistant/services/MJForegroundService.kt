@@ -146,7 +146,7 @@ class MJForegroundService : Service() {
     }
 
     private fun onWakeWordTriggered() {
-        Log.info(TAG, "Wake word triggered! Waking up MJ...")
+        Log.i(TAG, "Wake word triggered! Waking up MJ...")
         val wakeIntent = Intent(this, MainActivity::class.java).apply {
             action = "com.mj.assistant.TRIGGER_WAKE"
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
